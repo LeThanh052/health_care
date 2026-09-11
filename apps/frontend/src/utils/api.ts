@@ -2,7 +2,7 @@ import axios from 'axios';
 import { session } from './session';
 
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, ''),
   headers: {
     'Content-Type': 'application/json',
   },

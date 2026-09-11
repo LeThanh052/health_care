@@ -1,6 +1,7 @@
 import { session } from "../utils/session";
 
-const BASE_URL = "/api/demo-data";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+const BASE_URL = `${API_BASE}/demo-data`;
 
 const getHeaders = () => {
   const token = session.getAccessToken();
