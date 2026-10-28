@@ -117,6 +117,102 @@ async function main() {
     });
   }
 
+  // ── Role Permissions Mapping ──────────────────────────────────────────────
+  const allPermissions = await prisma.permission.findMany();
+  const permByCode = new Map(allPermissions.map((p) => [p.actionCode, p]));
+
+  const rolePermissionMapping: Array<{ role: string; perms: string[] }> = [
+    {
+      role: "System Admin",
+      perms: allPermissions.map((p) => p.actionCode),
+    },
+    {
+      role: "DON (Director of Nursing)",
+      perms: [
+        "RESIDENT_LIST_VIEW", "RESIDENT_LIST_MANAGE",
+        "PROFILE_DETAIL_VIEW", "PROFILE_DETAIL_MANAGE",
+        "INITIAL_ASSESSMENT_VIEW", "INITIAL_ASSESSMENT_MANAGE",
+        "CARE_PLAN_LIST_VIEW", "CARE_PLAN_LIST_MANAGE",
+        "DON_REVIEW_VIEW", "DON_REVIEW_MANAGE",
+        "BEDSIDE_VITALS_VIEW",
+        "REPORT_INCIDENT_VIEW", "REPORT_INCIDENT_MANAGE",
+        "INCIDENT_LIST_VIEW", "INCIDENT_LIST_MANAGE",
+        "IDT_ACKNOWLEDGMENT_VIEW", "IDT_ACKNOWLEDGMENT_MANAGE",
+      ],
+    },
+    {
+      role: "Nurse (RN/LPN)",
+      perms: [
+        "RESIDENT_LIST_VIEW", "RESIDENT_LIST_MANAGE",
+        "PROFILE_DETAIL_VIEW", "PROFILE_DETAIL_MANAGE",
+        "INITIAL_ASSESSMENT_VIEW", "INITIAL_ASSESSMENT_MANAGE",
+        "CARE_PLAN_LIST_VIEW", "CARE_PLAN_LIST_MANAGE",
+        "DON_REVIEW_VIEW",
+        "BEDSIDE_VITALS_VIEW", "BEDSIDE_VITALS_MANAGE",
+        "REPORT_INCIDENT_VIEW", "REPORT_INCIDENT_MANAGE",
+        "INCIDENT_LIST_VIEW",
+        "IDT_ACKNOWLEDGMENT_VIEW", "IDT_ACKNOWLEDGMENT_MANAGE",
+      ],
+    },
+    {
+      role: "CNA",
+      perms: [
+        "RESIDENT_LIST_VIEW",
+        "PROFILE_DETAIL_VIEW",
+        "BEDSIDE_VITALS_VIEW", "BEDSIDE_VITALS_MANAGE",
+        "REPORT_INCIDENT_VIEW",
+      ],
+    },
+    {
+      role: "Admission Staff",
+      perms: [
+        "RESIDENT_LIST_VIEW", "RESIDENT_LIST_MANAGE",
+        "PROFILE_DETAIL_VIEW", "PROFILE_DETAIL_MANAGE",
+        "INITIAL_ASSESSMENT_VIEW",
+      ],
+    },
+    {
+      role: "Physician",
+      perms: [
+        "RESIDENT_LIST_VIEW",
+        "PROFILE_DETAIL_VIEW",
+        "CARE_PLAN_LIST_VIEW",
+        "IDT_ACKNOWLEDGMENT_VIEW", "IDT_ACKNOWLEDGMENT_MANAGE",
+      ],
+    },
+    {
+      role: "Dietary",
+      perms: [
+        "RESIDENT_LIST_VIEW",
+        "PROFILE_DETAIL_VIEW",
+        "CARE_PLAN_LIST_VIEW",
+        "IDT_ACKNOWLEDGMENT_VIEW", "IDT_ACKNOWLEDGMENT_MANAGE",
+      ],
+    },
+  ];
+
+  for (const mapping of rolePermissionMapping) {
+    const dbRole = dbRoles[mapping.role];
+    if (!dbRole) continue;
+    for (const code of mapping.perms) {
+      const dbPerm = permByCode.get(code);
+      if (!dbPerm) continue;
+      await prisma.rolePermission.upsert({
+        where: {
+          roleId_permissionId: {
+            roleId: dbRole.id,
+            permissionId: dbPerm.id,
+          },
+        },
+        update: {},
+        create: {
+          roleId: dbRole.id,
+          permissionId: dbPerm.id,
+        },
+      });
+    }
+  }
+
   // ── Users for all roles ───────────────────────────────────────────────────
   const hashedPassword = await bcrypt.hash("Password123!", BCRYPT_ROUNDS);
 
@@ -1199,6 +1295,327 @@ async function main() {
             amount: invTotal,
             received_by: admAlice.id,
             paid_at: new Date(Date.now() - 12 * 24 * 3600 * 1000),
+          },
+        });
+      }
+    }
+  }
+
+  // ── Step 7: Insurance Providers & Resident Policies ───────────────────────
+  console.log("[Seed] Seeding Insurance Providers & Resident Policies...");
+  const insuranceSeed = [
+    { name: "Medicare Part A & B (CMS)", type: "GOVERNMENT" },
+    { name: "California Medi-Cal Healthcare", type: "GOVERNMENT" },
+    { name: "Blue Shield of California Senior", type: "COMMERCIAL" },
+    { name: "Kaiser Permanente Senior Advantage", type: "COMMERCIAL" },
+    { name: "UnitedHealthcare Dual Complete (HMO-POS D-SNP)", type: "COMMERCIAL" },
+  ];
+
+  const dbProviders: any[] = [];
+  for (const item of insuranceSeed) {
+    let p = await prisma.insurance_providers.findFirst({ where: { provider_name: item.name } });
+    if (!p) {
+      p = await prisma.insurance_providers.create({
+        data: {
+          provider_name: item.name,
+          provider_type: item.type,
+        },
+      });
+    }
+    dbProviders.push(p);
+  }
+
+  const allResidentsInDb = await prisma.residents.findMany();
+  for (let i = 0; i < allResidentsInDb.length; i++) {
+    const res = allResidentsInDb[i];
+    const existingPolicy = await prisma.resident_insurance_policies.findFirst({
+      where: { resident_id: res.id },
+    });
+    if (!existingPolicy) {
+      const prov = dbProviders[i % dbProviders.length];
+      await prisma.resident_insurance_policies.create({
+        data: {
+          resident_id: res.id,
+          insurance_provider_id: prov.id,
+          policy_number_encrypted: `POL-${res.first_name.slice(0, 3).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`,
+          group_number: `GRP-CA-${100 + (i % 5)}`,
+          effective_from: new Date("2026-01-01"),
+          is_primary: true,
+          is_deleted: false,
+        },
+      });
+    }
+
+    // Ensure Pre-admission screening exists
+    const existingScreening = await prisma.pre_admission_screenings.findFirst({
+      where: { resident_id: res.id },
+    });
+    if (!existingScreening) {
+      await prisma.pre_admission_screenings.create({
+        data: {
+          resident_id: res.id,
+          screened_by: admAlice ? admAlice.id : allStaffUsers[0].id,
+          status: "APPROVED",
+        },
+      });
+    }
+  }
+
+  // ── Step 8: Medication Orders, Schedules & Administration Logs ────────────
+  console.log("[Seed] Seeding Medication Orders, Schedules & Administration Logs...");
+  const prescriber = docChen || allStaffUsers[0];
+  const adminNurse = nurseRivera || nurseLee || allStaffUsers[0];
+
+  const residentMedications = [
+    {
+      residentName: "Eleanor Vance",
+      meds: [
+        { drug: "Lisinopril", dosage: "10mg", route: "PO (Oral)", freq: "Once daily (08:00)", controlled: false, times: ["08:00"] },
+        { drug: "Atorvastatin Calcium", dosage: "20mg", route: "PO (Oral)", freq: "Once daily at bedtime (20:00)", controlled: false, times: ["20:00"] },
+        { drug: "Acetaminophen", dosage: "500mg", route: "PO (Oral)", freq: "PRN for pain Q6H", controlled: false, times: ["14:00"] },
+      ],
+    },
+    {
+      residentName: "Arthur Pendelton",
+      meds: [
+        { drug: "Donepezil HCl (Aricept)", dosage: "10mg", route: "PO (Oral)", freq: "Once daily at bedtime (20:00)", controlled: false, times: ["20:00"] },
+        { drug: "Memantine HCl (Namenda)", dosage: "10mg", route: "PO (Oral)", freq: "Twice daily (08:00, 20:00)", controlled: false, times: ["08:00", "20:00"] },
+      ],
+    },
+    {
+      residentName: "Dorothy Gale",
+      meds: [
+        { drug: "Amlodipine Besylate", dosage: "5mg", route: "PO (Oral)", freq: "Once daily (08:00)", controlled: false, times: ["08:00"] },
+        { drug: "Loratadine", dosage: "10mg", route: "PO (Oral)", freq: "Once daily (08:00)", controlled: false, times: ["08:00"] },
+      ],
+    },
+    {
+      residentName: "Robert Martinez",
+      meds: [
+        { drug: "Apixaban (Eliquis)", dosage: "5mg", route: "PO (Oral)", freq: "Twice daily (08:00, 20:00)", controlled: false, times: ["08:00", "20:00"] },
+        { drug: "Metoprolol Tartrate", dosage: "25mg", route: "PO (Oral)", freq: "Twice daily (08:00, 20:00)", controlled: false, times: ["08:00", "20:00"] },
+        { drug: "Atorvastatin Calcium", dosage: "40mg", route: "PO (Oral)", freq: "Once daily at bedtime (20:00)", controlled: false, times: ["20:00"] },
+      ],
+    },
+    {
+      residentName: "Beatrice Campbell",
+      meds: [
+        { drug: "Metformin HCl", dosage: "500mg", route: "PO (Oral)", freq: "Twice daily with meals (08:00, 18:00)", controlled: false, times: ["08:00", "18:00"] },
+        { drug: "Galantamine Hydrobromide", dosage: "8mg", route: "PO (Oral)", freq: "Twice daily (08:00, 20:00)", controlled: false, times: ["08:00", "20:00"] },
+      ],
+    },
+    {
+      residentName: "Walter White",
+      meds: [
+        { drug: "Tiotropium Bromide (Spiriva)", dosage: "18mcg", route: "Inhalation", freq: "Once daily (08:00)", controlled: false, times: ["08:00"] },
+        { drug: "Albuterol Sulfate Inhaler", dosage: "90mcg", route: "Inhalation", freq: "Q4H PRN for dyspnea", controlled: false, times: ["12:00"] },
+        { drug: "Prednisone", dosage: "10mg", route: "PO (Oral)", freq: "Once daily with breakfast (08:00)", controlled: false, times: ["08:00"] },
+      ],
+    },
+    {
+      residentName: "Frank Sinatra",
+      meds: [
+        { drug: "Furosemide (Lasix)", dosage: "40mg", route: "PO (Oral)", freq: "Twice daily (08:00, 14:00)", controlled: false, times: ["08:00", "14:00"] },
+        { drug: "Carvedilol (Coreg)", dosage: "12.5mg", route: "PO (Oral)", freq: "Twice daily (08:00, 20:00)", controlled: false, times: ["08:00", "20:00"] },
+        { drug: "Potassium Chloride", dosage: "20mEq", route: "PO (Oral)", freq: "Once daily (08:00)", controlled: false, times: ["08:00"] },
+        { drug: "Morphine Sulfate Oral Solution", dosage: "5mg", route: "PO (Oral)", freq: "Q4H PRN for breakthrough pain", controlled: true, times: ["14:00"] },
+      ],
+    },
+    {
+      residentName: "Helen Keller",
+      meds: [
+        { drug: "Latanoprost Ophthalmic", dosage: "0.005%", route: "Ophthalmic", freq: "1 drop both eyes QHS (20:00)", controlled: false, times: ["20:00"] },
+        { drug: "Gabapentin (Neurontin)", dosage: "300mg", route: "PO (Oral)", freq: "Three times daily (08:00, 14:00, 20:00)", controlled: false, times: ["08:00", "14:00", "20:00"] },
+        { drug: "Losartan Potassium", dosage: "50mg", route: "PO (Oral)", freq: "Once daily (08:00)", controlled: false, times: ["08:00"] },
+      ],
+    },
+    {
+      residentName: "Margaret Thatcher",
+      meds: [
+        { drug: "Alendronate Sodium", dosage: "70mg", route: "PO (Oral)", freq: "Once weekly on Monday (08:00)", controlled: false, times: ["08:00"] },
+        { drug: "Calcium Carbonate + Vit D3", dosage: "600mg/400IU", route: "PO (Oral)", freq: "Twice daily (08:00, 18:00)", controlled: false, times: ["08:00", "18:00"] },
+      ],
+    },
+    {
+      residentName: "Harold Finch",
+      meds: [
+        { drug: "Pregabalin (Lyrica)", dosage: "75mg", route: "PO (Oral)", freq: "Twice daily (08:00, 20:00)", controlled: true, times: ["08:00", "20:00"] },
+        { drug: "Baclofen", dosage: "10mg", route: "PO (Oral)", freq: "Three times daily (08:00, 14:00, 20:00)", controlled: false, times: ["08:00", "14:00", "20:00"] },
+      ],
+    },
+  ];
+
+  for (const group of residentMedications) {
+    const res = allResidentsInDb.find((r) => `${r.first_name} ${r.last_name}`.toLowerCase() === group.residentName.toLowerCase());
+    if (!res) continue;
+
+    for (const m of group.meds) {
+      let order = await prisma.medication_orders.findFirst({
+        where: { resident_id: res.id, drug_name: m.drug },
+      });
+
+      if (!order) {
+        order = await prisma.medication_orders.create({
+          data: {
+            resident_id: res.id,
+            prescribed_by: prescriber.id,
+            drug_name: m.drug,
+            dosage: m.dosage,
+            route: m.route,
+            frequency: m.freq,
+            is_controlled_substance: m.controlled,
+            status: res.status === "ACTIVE" ? "ACTIVE" : "DISCONTINUED",
+          },
+        });
+
+        for (const t of m.times) {
+          const [hh, mm] = t.split(":").map(Number);
+          const scheduleTime = new Date(`1970-01-01T${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:00Z`);
+          await prisma.medication_schedules.create({
+            data: {
+              order_id: order.id,
+              scheduled_time: scheduleTime,
+              is_active: true,
+            },
+          });
+        }
+
+        if (res.status === "ACTIVE") {
+          await prisma.medication_logs.create({
+            data: {
+              order_id: order.id,
+              administered_by: adminNurse.id,
+              witnessed_by: m.controlled ? (cnaUser?.id ?? nurseLee?.id) : null,
+              status: "ADMINISTERED",
+              is_clinically_justified: true,
+              override_reason: m.controlled ? "Controlled substance dual-witnessed administration" : null,
+              logged_at: new Date(Date.now() - 2 * 3600 * 1000),
+            },
+          });
+        }
+      }
+    }
+  }
+
+  // ── Step 9: 2-Week Shift Assignments ──────────────────────────────────────
+  console.log("[Seed] Seeding 2-week Shift Assignments...");
+  const staffSchedule = [
+    { user: nurseRivera, shift: dbShifts["Day"] },
+    { user: nurseLee, shift: dbShifts["Evening"] },
+    { user: cnaUser, shift: dbShifts["Day"] },
+    { user: donUser, shift: dbShifts["Day"] },
+    { user: admAlice, shift: dbShifts["Day"] },
+  ];
+
+  for (let dayOffset = -7; dayOffset <= 7; dayOffset++) {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + dayOffset);
+    targetDate.setHours(0, 0, 0, 0);
+
+    for (const member of staffSchedule) {
+      if (!member.user || !member.shift) continue;
+
+      const existing = await prisma.shift_assignments.findFirst({
+        where: {
+          shift_id: member.shift.id,
+          user_id: member.user.id,
+          work_date: targetDate,
+        },
+      });
+
+      if (!existing) {
+        let status = "SCHEDULED";
+        let clockIn: Date | null = null;
+        let clockOut: Date | null = null;
+
+        if (dayOffset < 0) {
+          status = "COMPLETED";
+          clockIn = new Date(targetDate.getTime() + 7 * 3600 * 1000);
+          clockOut = new Date(targetDate.getTime() + 15.5 * 3600 * 1000);
+        } else if (dayOffset === 0) {
+          status = "ON_DUTY";
+          clockIn = new Date(targetDate.getTime() + 7 * 3600 * 1000);
+        }
+
+        await prisma.shift_assignments.create({
+          data: {
+            shift_id: member.shift.id,
+            user_id: member.user.id,
+            work_date: targetDate,
+            status,
+            clock_in_at: clockIn,
+            clock_out_at: clockOut,
+          },
+        });
+      }
+    }
+  }
+
+  // ── Step 10: Clinical Notifications ───────────────────────────────────────
+  console.log("[Seed] Seeding Clinical Notifications...");
+  const notificationsSeed = [
+    {
+      user: donUser || allStaffUsers[0],
+      title: "DON Review Needed: Care Plan for Arthur Pendelton is pending approval",
+      type: "CARE_PLAN_REVIEW",
+    },
+    {
+      user: nurseRivera || allStaffUsers[0],
+      title: "CRITICAL VITALS: Frank Sinatra (Room 222-A) BP 185/110, SpO2 87%",
+      type: "CLINICAL_ALERT",
+    },
+    {
+      user: donUser || allStaffUsers[0],
+      title: "MANDATORY SLA ALERT: High-severity fall incident for Walter White (24h regulatory report required)",
+      type: "SLA_ALERT",
+    },
+    {
+      user: docChen || allStaffUsers[0],
+      title: "Physician E-Signature requested for Eleanor Vance approved care plan",
+      type: "SIGNATURE_REQUIRED",
+    },
+    {
+      user: cnaUser || allStaffUsers[0],
+      title: "Daily Tasks: 3 scheduled resident care tasks assigned for today",
+      type: "TASK_ASSIGNED",
+    },
+  ];
+
+  for (const n of notificationsSeed) {
+    if (!n.user) continue;
+    const existing = await prisma.notifications.findFirst({
+      where: { user_id: n.user.id, title: n.title },
+    });
+    if (!existing) {
+      await prisma.notifications.create({
+        data: {
+          user_id: n.user.id,
+          title: n.title,
+          type: n.type,
+          is_read: false,
+          created_at: new Date(Date.now() - 3600 * 1000),
+        },
+      });
+    }
+  }
+
+  // ── Step 11: PHI Access Logs ──────────────────────────────────────────────
+  console.log("[Seed] Seeding PHI Access Logs...");
+  if (nurseRivera) {
+    for (const res of allResidentsInDb.slice(0, 5)) {
+      const existing = await prisma.phi_access_logs.findFirst({
+        where: { accessed_by: nurseRivera.id, record_id: res.id },
+      });
+      if (!existing) {
+        await prisma.phi_access_logs.create({
+          data: {
+            table_name: "residents",
+            record_id: res.id,
+            accessed_by: nurseRivera.id,
+            access_type: "READ",
+            access_reason: "Clinical morning round and vitals recording",
+            ip_address: "10.0.1.42",
+            accessed_at: new Date(Date.now() - 3 * 3600 * 1000),
           },
         });
       }
