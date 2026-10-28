@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Lock } from "lucide-react";
 import { APP_ROUTES } from "../../constants/appRoutes";
 import { canManageResidents } from "../../utils/permissions";
 import { useAuthStore } from "../../utils/session";
@@ -94,29 +93,22 @@ export function ResidentListPage() {
                         {total} residents · sorted by Date Added (newest first)
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    {isManager ? (
-                        <>
-                            <Link
-                                to={APP_ROUTES.PRE_ADMISSION_SCREENING}
-                                className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-lg shadow-2xs transition-colors"
-                            >
-                                Pre-screening
-                            </Link>
-                            <Link
-                                to={APP_ROUTES.RESIDENT_CREATE}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-xs transition-colors"
-                            >
-                                + Add New Resident
-                            </Link>
-                        </>
-                    ) : (
-                        <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 select-none">
-                            <Lock size={14} className="text-slate-400" />
-                            <span>Chỉ xem (Quyền quản lý: Admission / Admin)</span>
-                        </div>
-                    )}
-                </div>
+                {isManager ? (
+                    <div className="flex items-center gap-3">
+                        <Link
+                            to={APP_ROUTES.PRE_ADMISSION_SCREENING}
+                            className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-lg shadow-2xs transition-colors"
+                        >
+                            Pre-screening
+                        </Link>
+                        <Link
+                            to={APP_ROUTES.RESIDENT_CREATE}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-xs transition-colors"
+                        >
+                            + Add New Resident
+                        </Link>
+                    </div>
+                ) : null}
             </div>
 
             {/* Top Summary Cards (SC_017 Wireframe) */}
