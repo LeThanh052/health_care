@@ -126,12 +126,28 @@ export function ResidentProfileDetailPage() {
                     <h2>{resident.fullName}</h2>
                     <p>
                         {calculateAge(resident.dateOfBirth)} years old · {GENDER_LABEL[resident.gender]} · Admitted {resident.admissionDate}
+                        {resident.phone ? ` · 📞 ${resident.phone}` : ""}
                     </p>
+                    {resident.address ? <p className="text-sm text-slate-500 mt-1">📍 {resident.address}</p> : null}
                 </div>
                 <ResidentStatusBadge status={resident.status} />
             </section>
 
             <section className="profile-grid">
+                <article className="detail-panel">
+                    <h2>Personal Contact</h2>
+                    <dl className="detail-list">
+                        <div>
+                            <dt>Personal phone</dt>
+                            <dd>{displayValue(resident.phone)}</dd>
+                        </div>
+                        <div>
+                            <dt>Address</dt>
+                            <dd>{displayValue(resident.address)}</dd>
+                        </div>
+                    </dl>
+                </article>
+
                 <article className="detail-panel">
                     <h2>Admission</h2>
                     <dl className="detail-list">
