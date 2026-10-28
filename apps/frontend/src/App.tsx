@@ -183,7 +183,14 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/residents/reception" element={<ResidentReceptionPage />} />
+                <Route
+                    path="/residents/reception"
+                    element={
+                        <ProtectedRoute allowedRoles={["Admission", "Admin"]}>
+                            <ResidentReceptionPage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route path="/residents/:id" element={<ResidentProfileDetailPage />} />
                 <Route
                     path="/residents/:id/edit"
@@ -196,7 +203,14 @@ function App() {
                 <Route path="/residents/:residentId/loc-classification" element={<LocClassificationPage />} />
                 <Route path="/residents/:residentId/loc-history" element={<LocHistoryPage />} />
 
-                <Route path="/admissions/pre-screening" element={<ResidentReceptionPage />} />
+                <Route
+                    path="/admissions/pre-screening"
+                    element={
+                        <ProtectedRoute allowedRoles={["Admission", "Admin"]}>
+                            <ResidentReceptionPage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="/admissions/new"
                     element={

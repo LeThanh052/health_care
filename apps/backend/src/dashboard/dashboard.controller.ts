@@ -22,7 +22,7 @@ export class DashboardController {
     @Get("nurse")
     @ApiOperation({ summary: "Get Nurse Dashboard" })
     async getNurseDashboard(@Req() req: Request) {
-        this.checkPermission(req, [ROLE_NAMES.NURSE, ROLE_NAMES.SYSTEM_ADMIN, ROLE_NAMES.DON]);
+        this.checkPermission(req, [ROLE_NAMES.NURSE, ROLE_NAMES.SYSTEM_ADMIN, ROLE_NAMES.DON, "Physician", "Admission Staff"]);
         const user = (req as any).user;
         return this.dashboardService.getNurseDashboard(user.sub);
     }
