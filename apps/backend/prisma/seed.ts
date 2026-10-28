@@ -876,7 +876,17 @@ async function main() {
         data: {
           resident_id: resident.id,
           contact_id: contact.id,
-          relationship_type: "FAMILY_REPRESENTATIVE",
+          relationship_type: "Emergency Contact",
+          is_emergency_contact: true,
+          is_primary: true,
+        },
+      });
+    } else {
+      await prisma.resident_contacts.update({
+        where: { id: existingContact.id },
+        data: {
+          is_emergency_contact: true,
+          is_primary: true,
         },
       });
     }
