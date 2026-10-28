@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Put } from "@n
 import { CreateHolidayDto, UpdateHolidayDto } from "./dto/holiday.dto.js";
 import { HolidaysService } from "./holidays.service.js";
 
-@Controller("facilities/:facilityId/holidays")
+@Controller("api/facilities/:facilityId/holidays")
 export class HolidaysController {
     constructor(private readonly holidaysService: HolidaysService) {}
 
