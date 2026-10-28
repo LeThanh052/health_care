@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
 import { APP_ROUTES } from "../../constants/appRoutes";
+import { canManageResidents } from "../../utils/permissions";
 import { useAuthStore } from "../../utils/session";
 import { Pagination } from "./components/pagination";
 import { ResidentFilters } from "./components/residentFilters";
@@ -13,8 +14,7 @@ const PAGE_SIZE = 5;
 
 export function ResidentListPage() {
     const user = useAuthStore((state) => state.user);
-    const roleName = (user?.roleName || "").toLowerCase();
-    const canManageResidents = Boolean(roleName.includes("admission") || roleName.includes("admin"));
+    const isManager = canManageResidents(user);
 
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState<ResidentStatus | "all">("all");
@@ -95,7 +95,7 @@ export function ResidentListPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {canManageResidents ? (
+                    {isManager ? (
                         <>
                             <Link
                                 to={APP_ROUTES.PRE_ADMISSION_SCREENING}
@@ -111,26 +111,10 @@ export function ResidentListPage() {
                             </Link>
                         </>
                     ) : (
-                        <>
-                            <button
-                                type="button"
-                                disabled
-                                title="Pre-screening chỉ dành cho Admission Staff hoặc System Admin"
-                                className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 border border-slate-200 text-slate-400 font-medium text-sm rounded-lg cursor-not-allowed opacity-75 shadow-none"
-                            >
-                                <Lock size={14} />
-                                <span>Pre-screening</span>
-                            </button>
-                            <button
-                                type="button"
-                                disabled
-                                title="Tạo cư dân mới chỉ dành cho Admission Staff hoặc System Admin"
-                                className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-200 text-slate-400 font-semibold text-sm rounded-lg cursor-not-allowed opacity-75 shadow-none"
-                            >
-                                <Lock size={14} />
-                                <span>+ Add New Resident</span>
-                            </button>
-                        </>
+                        <div className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-500 select-none">
+                            <Lock size={14} className="text-slate-400" />
+                            <span>Chỉ xem (Quyền quản lý: Admission / Admin)</span>
+                        </div>
                     )}
                 </div>
             </div>

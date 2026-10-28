@@ -178,7 +178,7 @@ function App() {
                 <Route
                     path="/residents/create"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]}>
+                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
                             <ResidentFormPage />
                         </ProtectedRoute>
                     }
@@ -186,7 +186,7 @@ function App() {
                 <Route
                     path="/residents/reception"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]}>
+                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
                             <ResidentReceptionPage />
                         </ProtectedRoute>
                     }
@@ -195,7 +195,7 @@ function App() {
                 <Route
                     path="/residents/:id/edit"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]}>
+                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
                             <ResidentFormPage />
                         </ProtectedRoute>
                     }
@@ -206,7 +206,7 @@ function App() {
                 <Route
                     path="/admissions/pre-screening"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]}>
+                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
                             <ResidentReceptionPage />
                         </ProtectedRoute>
                     }
@@ -214,7 +214,7 @@ function App() {
                 <Route
                     path="/admissions/new"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]}>
+                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
                             <AdmissionFormPage />
                         </ProtectedRoute>
                     }

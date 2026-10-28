@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Lock } from "lucide-react";
 import { APP_ROUTES } from "../../constants/appRoutes";
+import { canManageResidents } from "../../utils/permissions";
 import { useAuthStore } from "../../utils/session";
 import { CARE_LEVEL_LABEL, COGNITIVE_STATUS_LABEL, FALL_RISK_LABEL, GENDER_LABEL, MOBILITY_STATUS_LABEL, RESIDENT_STATUS_LABEL } from "./constants";
 import { ResidentStatusBadge } from "./components/residentStatusBadge";
@@ -14,8 +15,7 @@ const displayValue = (value?: string | number) => (value === undefined || value 
 
 export function ResidentProfileDetailPage() {
     const user = useAuthStore((state) => state.user);
-    const roleName = (user?.roleName || "").toLowerCase();
-    const canManageResidents = Boolean(roleName.includes("admission") || roleName.includes("admin"));
+    const isManager = canManageResidents(user);
 
     const { id } = useParams();
     const [resident, setResident] = useState<Resident | null>(null);
@@ -112,21 +112,11 @@ export function ResidentProfileDetailPage() {
                     <Link className="secondary-action" to={APP_ROUTES.RESIDENTS}>
                         Back to List
                     </Link>
-                    {canManageResidents ? (
+                    {isManager ? (
                         <Link className="primary-action" to={`${APP_ROUTES.RESIDENTS}/${resident.id}/edit`}>
                             Edit Resident
                         </Link>
-                    ) : (
-                        <button
-                            type="button"
-                            disabled
-                            title="Chỉnh sửa thông tin cư dân chỉ dành cho Admission Staff hoặc System Admin"
-                            className="primary-action inline-flex items-center gap-1.5 opacity-60 cursor-not-allowed bg-slate-200 text-slate-400 border border-slate-300 shadow-none pointer-events-none select-none"
-                        >
-                            <Lock size={14} />
-                            <span>Edit Resident</span>
-                        </button>
-                    )}
+                    ) : null}
                 </div>
             </section>
 
