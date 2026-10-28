@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../constants/appRoutes";
 import { z } from "zod";
 import { CARE_LEVEL_LABEL, COGNITIVE_STATUS_LABEL, FALL_RISK_LABEL, GENDER_LABEL, MOBILITY_STATUS_LABEL } from "./constants";
@@ -130,10 +130,12 @@ const toPayload = (form: FlatReceptionForm): ResidentEvaluationPayload => ({
 });
 
 export function ResidentReceptionPage() {
+    const navigate = useNavigate();
     const [form, setForm] = useState(initialForm);
     const [errors, setErrors] = useState<FormErrors>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
 
     const completionScore = useMemo(() => {
         const requiredFields: Array<keyof FlatReceptionForm> = ["fullName", "dateOfBirth", "gender", "admissionDate", "careLevel", "emergencyContactName", "emergencyContactPhone"];
@@ -152,6 +154,7 @@ export function ResidentReceptionPage() {
             [field]: undefined,
         }));
         setSuccessMessage("");
+        setErrorMessage("");
     };
 
     const validateForm = () => {
@@ -179,10 +182,21 @@ export function ResidentReceptionPage() {
         }
 
         setIsSubmitting(true);
+        setErrorMessage("");
+        setSuccessMessage("");
 
         try {
             const resident = await residentRepository.createPreScreening(toPayload(form));
-            setSuccessMessage(mode === "draft" ? `Draft saved for ${resident.fullName}.` : `${resident.fullName} is ready for clinical review.`);
+            setSuccessMessage(
+                mode === "draft"
+                    ? `Draft saved for ${resident.fullName}. Redirecting to profile...`
+                    : `${resident.fullName} is ready for clinical review. Redirecting to profile...`
+            );
+            setTimeout(() => {
+                navigate(`${APP_ROUTES.RESIDENTS}/${resident.id}`);
+            }, 1200);
+        } catch (error: any) {
+            setErrorMessage(error.message || "Failed to save pre-screening. Please check required fields.");
         } finally {
             setIsSubmitting(false);
         }
@@ -212,6 +226,7 @@ export function ResidentReceptionPage() {
             </section>
 
             {successMessage ? <div className="success-banner">{successMessage}</div> : null}
+            {errorMessage ? <div className="error-banner">{errorMessage}</div> : null}
 
             <form className="intake-form">
                 <section className="form-card">

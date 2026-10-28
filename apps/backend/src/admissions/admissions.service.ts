@@ -62,14 +62,61 @@ export class AdmissionsService {
     async createPreScreening(dto: CreatePreScreeningDto, userId: string) {
         const screeningResult = await this.calculateScreeningStatus(dto);
         const result = await this.prisma.$transaction(async (transaction) => {
+            let addressId: bigint | undefined = undefined;
+            if (dto.personalInfo.address) {
+                const addr = await transaction.addresses.create({
+                    data: {
+                        street_line1: dto.personalInfo.address,
+                        city: "Local",
+                        state: "NA",
+                        zip_code: "00000",
+                    },
+                });
+                addressId = addr.id;
+            }
+
+            let bedId: string | undefined = undefined;
+            if (dto.admissionInfo.roomNumber) {
+                const room = await transaction.rooms.findFirst({
+                    where: { room_number: dto.admissionInfo.roomNumber },
+                    include: { beds: true },
+                });
+                if (room && room.beds.length > 0) {
+                    bedId = room.beds[0].id;
+                }
+            }
+
             const resident = await transaction.residents.create({
                 data: {
                     ...this.splitFullName(dto.personalInfo.fullName),
                     date_of_birth: this.toDate(dto.personalInfo.dateOfBirth),
                     gender: dto.personalInfo.gender.toUpperCase(),
                     status: screeningResult.status === "REJECTED" ? "PENDING" : "PENDING",
+                    address_id: addressId,
+                    bed_id: bedId,
                 },
             });
+
+            if (dto.admissionInfo.careLevel) {
+                const levelCode = dto.admissionInfo.careLevel.toUpperCase();
+                const careLevel = await transaction.care_levels.findFirst({
+                    where: {
+                        OR: [
+                            { level_code: levelCode },
+                            { level_code: levelCode.replace("_", "") },
+                        ],
+                    },
+                });
+                if (careLevel) {
+                    await transaction.resident_care_level_history.create({
+                        data: {
+                            resident_id: resident.id,
+                            care_level_id: careLevel.id,
+                            start_date: new Date(),
+                        },
+                    });
+                }
+            }
             const contactName = this.splitFullName(dto.emergencyContact.name);
             const contact = await transaction.contacts.create({
                 data: {

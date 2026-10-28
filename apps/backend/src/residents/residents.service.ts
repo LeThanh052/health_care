@@ -6,6 +6,33 @@ import { ListResidentsQueryDto } from "./dto/list-residents-query.dto.js";
 import { UpdateResidentStatusDto } from "./dto/update-resident-status.dto.js";
 import { UpdateResidentDto } from "./dto/update-resident.dto.js";
 
+const RESIDENT_INCLUDE = {
+    beds: { include: { rooms: true } },
+    addresses: true,
+    resident_contacts: {
+        include: { contacts: true },
+        take: 5,
+    },
+    resident_care_level_history: {
+        include: { care_levels: true },
+        orderBy: { start_date: "desc" as const },
+        take: 1,
+    },
+    assessments: {
+        include: {
+            care_levels_assessments_confirmed_care_level_idTocare_levels: true,
+            care_levels_assessments_suggested_care_level_idTocare_levels: true,
+        },
+        orderBy: { created_at: "desc" as const },
+        take: 1,
+    },
+    clinical_records: {
+        where: { is_deleted: false },
+        orderBy: { created_at: "desc" as const },
+        take: 10,
+    },
+};
+
 @Injectable()
 export class ResidentsService {
     constructor(private readonly prisma: PrismaService) {}
@@ -14,28 +41,92 @@ export class ResidentsService {
         const fullName = [resident.first_name, resident.middle_name, resident.last_name].filter(Boolean).join(" ");
         const roomNumber = resident.beds?.rooms?.room_number ?? undefined;
 
+        // Parse clinical records for medical summary & intake details
+        let clinicalData: any = {};
+        if (resident.clinical_records && Array.isArray(resident.clinical_records)) {
+            for (let i = resident.clinical_records.length - 1; i >= 0; i--) {
+                const record = resident.clinical_records[i];
+                try {
+                    const parsed = typeof record.description === "string" ? JSON.parse(record.description) : record.description;
+                    if (parsed && typeof parsed === "object") {
+                        clinicalData = { ...clinicalData, ...parsed };
+                    }
+                } catch {
+                    // Ignore non-json records
+                }
+            }
+        }
+
+        const medical = clinicalData.medicalSummary || {};
+        const admission = clinicalData.admissionInfo || {};
+        const initialEval = clinicalData.initialEvaluation || {};
+        const contactObj = clinicalData.contact || clinicalData.emergencyContact || {};
+
+        // Find emergency contact or primary contact
+        const emergencyRc =
+            resident.resident_contacts?.find((rc: any) => rc.is_emergency_contact) ||
+            resident.resident_contacts?.find((rc: any) => rc.is_primary) ||
+            resident.resident_contacts?.[0];
+        const contact = emergencyRc?.contacts;
+
+        // Extract care level
+        let rawCareLevel =
+            resident.resident_care_level_history?.[0]?.care_levels?.level_code ||
+            resident.assessments?.[0]?.care_levels_assessments_confirmed_care_level_idTocare_levels?.level_code ||
+            admission.careLevel ||
+            "assisted_living";
+
+        let careLevel = String(rawCareLevel).toLowerCase();
+        if (!["independent", "assisted_living", "memory_care", "skilled_nursing"].includes(careLevel)) {
+            if (careLevel.includes("memory")) careLevel = "memory_care";
+            else if (careLevel.includes("skilled")) careLevel = "skilled_nursing";
+            else if (careLevel.includes("independent")) careLevel = "independent";
+            else careLevel = "assisted_living";
+        }
+
+        const emergencyContactName =
+            (contact ? [contact.first_name, contact.middle_name, contact.last_name].filter(Boolean).join(" ") : null) ||
+            contactObj.name ||
+            "Not provided";
+
+        const emergencyContactPhone = contact?.phone_primary || contactObj.phone || "Not provided";
+        const emergencyContactEmail = contact?.email || contactObj.email || undefined;
+        const emergencyContactRelationship = emergencyRc?.relationship_type || contactObj.relationship || undefined;
+
+        const phone = clinicalData.personalInfo?.phone || clinicalData.phone || undefined;
+        const address = resident.addresses?.street_line1 || clinicalData.personalInfo?.address || clinicalData.address || undefined;
+
+        const assignedNurse = admission.assignedNurse || clinicalData.assignedNurse || undefined;
+        const assignedDoctor = admission.assignedDoctor || clinicalData.assignedDoctor || undefined;
+        const admissionDate = admission.admissionDate || (resident.created_at ? resident.created_at.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+
         return {
             id: resident.id,
             residentCode: `NH-${String(resident.id).slice(0, 8).toUpperCase()}`,
             fullName,
-            dateOfBirth: resident.date_of_birth.toISOString().slice(0, 10),
+            dateOfBirth: resident.date_of_birth ? resident.date_of_birth.toISOString().slice(0, 10) : "",
             gender: String(resident.gender ?? "other").toLowerCase(),
-            phone: undefined,
-            address: undefined,
-            admissionDate: resident.created_at.toISOString().slice(0, 10),
-            roomNumber,
-            careLevel: "assisted_living",
+            phone,
+            address,
+            admissionDate,
+            roomNumber: roomNumber || admission.roomNumber || undefined,
+            careLevel,
             status: this.toApiStatus(resident.status),
-            assignedNurse: undefined,
-            assignedDoctor: undefined,
-            emergencyContactName: "Not provided",
-            emergencyContactRelationship: undefined,
-            emergencyContactPhone: "Not provided",
-            emergencyContactEmail: undefined,
-            primaryDiagnosis: undefined,
-            allergies: undefined,
-            currentMedications: undefined,
-            mobilityStatus: undefined,
+            assignedNurse,
+            assignedDoctor,
+            emergencyContactName,
+            emergencyContactRelationship,
+            emergencyContactPhone,
+            emergencyContactEmail,
+            primaryDiagnosis: medical.primaryDiagnosis || clinicalData.primaryDiagnosis || undefined,
+            allergies: medical.allergies || clinicalData.allergies || undefined,
+            currentMedications: medical.currentMedications || clinicalData.currentMedications || undefined,
+            mobilityStatus: medical.mobilityStatus || clinicalData.mobilityStatus || undefined,
+            cognitiveStatus: initialEval.cognitiveStatus || clinicalData.cognitiveStatus || undefined,
+            fallRisk: initialEval.fallRisk || clinicalData.fallRisk || undefined,
+            painLevel: initialEval.painLevel !== undefined ? initialEval.painLevel : clinicalData.painLevel,
+            nutritionNotes: initialEval.nutritionNotes || clinicalData.nutritionNotes || undefined,
+            clinicalNotes: initialEval.clinicalNotes || clinicalData.clinicalNotes || undefined,
             isChartLocked: resident.is_chart_locked,
         };
     }
@@ -114,7 +205,7 @@ export class ResidentsService {
                 skip,
                 take: limit,
                 orderBy: { created_at: "desc" },
-                include: { beds: { include: { rooms: true } } },
+                include: RESIDENT_INCLUDE,
             }),
             this.prisma.residents.count({ where }),
         ]);
@@ -133,7 +224,7 @@ export class ResidentsService {
     async findOne(id: string) {
         const resident = await this.prisma.residents.findUnique({
             where: { id },
-            include: { beds: { include: { rooms: true } } },
+            include: RESIDENT_INCLUDE,
         });
 
         if (!resident) {
@@ -144,17 +235,121 @@ export class ResidentsService {
     }
 
     async create(dto: CreateResidentDto) {
+        let bedId: string | undefined = undefined;
+        if (dto.roomNumber) {
+            const room = await this.prisma.rooms.findFirst({
+                where: { room_number: dto.roomNumber },
+                include: { beds: true },
+            });
+            if (room && room.beds.length > 0) {
+                bedId = room.beds[0].id;
+            }
+        }
+
+        let addressId: bigint | undefined = undefined;
+        if (dto.address) {
+            const newAddr = await this.prisma.addresses.create({
+                data: {
+                    street_line1: dto.address,
+                    city: "Local",
+                    state: "NA",
+                    zip_code: "00000",
+                },
+            });
+            addressId = newAddr.id;
+        }
+
         const resident = await this.prisma.residents.create({
             data: {
                 ...this.splitFullName(dto.fullName),
                 date_of_birth: this.toDate(dto.dateOfBirth),
                 gender: dto.gender.toUpperCase(),
                 status: "PENDING",
+                bed_id: bedId,
+                address_id: addressId,
             },
-            include: { beds: { include: { rooms: true } } },
         });
 
-        return this.serializeResident(resident);
+        // Emergency Contact
+        if (dto.emergencyContactName && dto.emergencyContactPhone) {
+            const contactName = this.splitFullName(dto.emergencyContactName);
+            const contact = await this.prisma.contacts.create({
+                data: {
+                    ...contactName,
+                    phone_primary: dto.emergencyContactPhone,
+                    email: dto.emergencyContactEmail,
+                },
+            });
+            await this.prisma.resident_contacts.create({
+                data: {
+                    resident_id: resident.id,
+                    contact_id: contact.id,
+                    relationship_type: dto.emergencyContactRelationship || "Emergency Contact",
+                    is_emergency_contact: true,
+                    is_primary: true,
+                },
+            });
+        }
+
+        // Care level history
+        if (dto.careLevel) {
+            const levelCode = dto.careLevel.toUpperCase();
+            const careLevel = await this.prisma.care_levels.findFirst({
+                where: {
+                    OR: [
+                        { level_code: levelCode },
+                        { level_code: levelCode.replace("_", "") },
+                    ],
+                },
+            });
+            if (careLevel) {
+                await this.prisma.resident_care_level_history.create({
+                    data: {
+                        resident_id: resident.id,
+                        care_level_id: careLevel.id,
+                        start_date: new Date(),
+                    },
+                });
+            }
+        }
+
+        // Clinical record
+        const staffUser = await this.prisma.user.findFirst({ select: { id: true } });
+        if (staffUser) {
+            await this.prisma.clinical_records.create({
+                data: {
+                    resident_id: resident.id,
+                    recorded_by: staffUser.id,
+                    record_type: "PROGRESS_NOTE",
+                    description: JSON.stringify({
+                        type: "RESIDENT_PROFILE",
+                        phone: dto.phone,
+                        address: dto.address,
+                        admissionInfo: {
+                            admissionDate: dto.admissionDate,
+                            roomNumber: dto.roomNumber,
+                            careLevel: dto.careLevel,
+                            assignedNurse: dto.assignedNurse,
+                            assignedDoctor: dto.assignedDoctor,
+                        },
+                        medicalSummary: {
+                            primaryDiagnosis: dto.primaryDiagnosis,
+                            allergies: dto.allergies,
+                            currentMedications: dto.currentMedications,
+                            mobilityStatus: dto.mobilityStatus,
+                        },
+                        contact: {
+                            name: dto.emergencyContactName,
+                            relationship: dto.emergencyContactRelationship,
+                            phone: dto.emergencyContactPhone,
+                            email: dto.emergencyContactEmail,
+                        },
+                    }),
+                },
+            });
+        }
+
+        return this.findOne(resident.id);
     }
 
     async update(id: string, dto: UpdateResidentDto) {
@@ -167,25 +362,174 @@ export class ResidentsService {
             ...(dto.gender !== undefined ? { gender: dto.gender.toUpperCase() } : {}),
         };
 
-        const resident = await this.prisma.residents.update({
+        // 1. Room / Bed association
+        if (dto.roomNumber) {
+            const room = await this.prisma.rooms.findFirst({
+                where: { room_number: dto.roomNumber },
+                include: { beds: true },
+            });
+            if (room) {
+                let bed = room.beds[0];
+                if (!bed) {
+                    bed = await this.prisma.beds.create({
+                        data: {
+                            room_id: room.id,
+                            bed_number: "1",
+                            status: "OCCUPIED",
+                        },
+                    });
+                }
+                data.beds = { connect: { id: bed.id } };
+            }
+        }
+
+        // 2. Address
+        if (dto.address) {
+            const currentResident = await this.prisma.residents.findUnique({
+                where: { id },
+                select: { address_id: true },
+            });
+            if (currentResident?.address_id) {
+                await this.prisma.addresses.update({
+                    where: { id: currentResident.address_id },
+                    data: {
+                        street_line1: dto.address,
+                        city: "Local",
+                        state: "NA",
+                        zip_code: "00000",
+                    },
+                });
+            } else {
+                const newAddr = await this.prisma.addresses.create({
+                    data: {
+                        street_line1: dto.address,
+                        city: "Local",
+                        state: "NA",
+                        zip_code: "00000",
+                    },
+                });
+                data.addresses = { connect: { id: newAddr.id } };
+            }
+        }
+
+        await this.prisma.residents.update({
             where: { id },
             data,
-            include: { beds: { include: { rooms: true } } },
         });
 
-        return this.serializeResident(resident);
+        // 3. Emergency Contact
+        if (dto.emergencyContactName || dto.emergencyContactPhone) {
+            const existingRc = await this.prisma.resident_contacts.findFirst({
+                where: { resident_id: id },
+                include: { contacts: true },
+            });
+            const contactName = this.splitFullName(dto.emergencyContactName || "Emergency Contact");
+            if (existingRc) {
+                await this.prisma.contacts.update({
+                    where: { id: existingRc.contact_id },
+                    data: {
+                        ...contactName,
+                        phone_primary: dto.emergencyContactPhone || existingRc.contacts.phone_primary,
+                        email: dto.emergencyContactEmail ?? existingRc.contacts.email,
+                    },
+                });
+                if (dto.emergencyContactRelationship) {
+                    await this.prisma.resident_contacts.update({
+                        where: { id: existingRc.id },
+                        data: { relationship_type: dto.emergencyContactRelationship },
+                    });
+                }
+            } else if (dto.emergencyContactName && dto.emergencyContactPhone) {
+                const newContact = await this.prisma.contacts.create({
+                    data: {
+                        ...contactName,
+                        phone_primary: dto.emergencyContactPhone,
+                        email: dto.emergencyContactEmail,
+                    },
+                });
+                await this.prisma.resident_contacts.create({
+                    data: {
+                        resident_id: id,
+                        contact_id: newContact.id,
+                        relationship_type: dto.emergencyContactRelationship || "Emergency Contact",
+                        is_emergency_contact: true,
+                        is_primary: true,
+                    },
+                });
+            }
+        }
+
+        // 4. Care Level
+        if (dto.careLevel) {
+            const levelCode = dto.careLevel.toUpperCase();
+            const careLevel = await this.prisma.care_levels.findFirst({
+                where: {
+                    OR: [
+                        { level_code: levelCode },
+                        { level_code: levelCode.replace("_", "") },
+                        { level_code: `LEVEL_${levelCode}` },
+                    ],
+                },
+            });
+            if (careLevel) {
+                await this.prisma.resident_care_level_history.create({
+                    data: {
+                        resident_id: id,
+                        care_level_id: careLevel.id,
+                        start_date: new Date(),
+                    },
+                });
+            }
+        }
+
+        // 5. Clinical Record
+        const staffUser = await this.prisma.user.findFirst({ select: { id: true } });
+        if (staffUser) {
+            await this.prisma.clinical_records.create({
+                data: {
+                    resident_id: id,
+                    recorded_by: staffUser.id,
+                    record_type: "PROGRESS_NOTE",
+                    description: JSON.stringify({
+                        type: "RESIDENT_PROFILE",
+                        phone: dto.phone,
+                        address: dto.address,
+                        admissionInfo: {
+                            admissionDate: dto.admissionDate,
+                            roomNumber: dto.roomNumber,
+                            careLevel: dto.careLevel,
+                            assignedNurse: dto.assignedNurse,
+                            assignedDoctor: dto.assignedDoctor,
+                        },
+                        medicalSummary: {
+                            primaryDiagnosis: dto.primaryDiagnosis,
+                            allergies: dto.allergies,
+                            currentMedications: dto.currentMedications,
+                            mobilityStatus: dto.mobilityStatus,
+                        },
+                        contact: {
+                            name: dto.emergencyContactName,
+                            relationship: dto.emergencyContactRelationship,
+                            phone: dto.emergencyContactPhone,
+                            email: dto.emergencyContactEmail,
+                        },
+                    }),
+                },
+            });
+        }
+
+        return this.findOne(id);
     }
 
     async updateStatus(id: string, dto: UpdateResidentStatusDto) {
         await this.findOne(id);
         await this.checkChartLock(id);
 
-        const resident = await this.prisma.residents.update({
+        await this.prisma.residents.update({
             where: { id },
             data: { status: this.toDbStatus(dto.status) },
-            include: { beds: { include: { rooms: true } } },
         });
 
-        return this.serializeResident(resident);
+        return this.findOne(id);
     }
 }
