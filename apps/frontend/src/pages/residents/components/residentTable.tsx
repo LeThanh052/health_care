@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { APP_ROUTES } from "../../../constants/appRoutes";
+import { useAuthStore } from "../../../utils/session";
 import { CARE_LEVEL_LABEL, GENDER_LABEL } from "../constants";
 import { calculateAge } from "../services/residentRepository";
 import type { Resident } from "../types";
@@ -11,6 +12,10 @@ type ResidentTableProps = {
 };
 
 export function ResidentTable({ residents, isLoading }: ResidentTableProps) {
+    const user = useAuthStore((state) => state.user);
+    const roleName = (user?.roleName || "").toLowerCase();
+    const canManageResidents = Boolean(roleName.includes("admission") || roleName.includes("admin"));
+
     if (isLoading) {
         return (
             <div className="empty-state">
@@ -80,7 +85,16 @@ export function ResidentTable({ residents, isLoading }: ResidentTableProps) {
                             <td>
                                 <div className="table-actions">
                                     <Link to={`${APP_ROUTES.RESIDENTS}/${resident.id}`}>View</Link>
-                                    <Link to={`${APP_ROUTES.RESIDENTS}/${resident.id}/edit`}>Edit</Link>
+                                    {canManageResidents ? (
+                                        <Link to={`${APP_ROUTES.RESIDENTS}/${resident.id}/edit`}>Edit</Link>
+                                    ) : (
+                                        <span
+                                            className="opacity-40 cursor-not-allowed select-none text-slate-400"
+                                            title="Chỉ dành cho Admission Staff hoặc System Admin"
+                                        >
+                                            Edit
+                                        </span>
+                                    )}
                                 </div>
                             </td>
                         </tr>
