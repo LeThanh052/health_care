@@ -32,37 +32,28 @@ export function CarePlanListPage() {
   const [isSelectResidentOpen, setIsSelectResidentOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-white p-6 md:p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="p-6 md:p-8 space-y-6 bg-slate-50 min-h-full">
+      <div className="flex items-center justify-between">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
             <span>Care Planning</span>
             <span>&gt;</span>
             <span>List</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Care Plans</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900">Care Plans</h1>
           <p className="mt-1 text-sm text-slate-500">
             {total} plans across your assigned residents
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsSelectResidentOpen(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm rounded-lg shadow-xs transition-colors"
-        >
-          + New Care Plan
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            to={APP_ROUTES.CREATE_CARE_PLAN}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-xs transition-colors"
+          >
+            + New Care Plan
+          </Link>
+        </div>
       </div>
-
-      <CarePlanFilters
-        search={search}
-        onSearchChange={setSearch}
-        status={status}
-        onStatusChange={(val) => {
-          setStatus(val as CarePlanStatus | "all");
-          setPage(1); // Reset to page 1 on filter change
-        }}
-      />
 
       <CarePlanSummaryCards
         total={summary.total}
@@ -70,6 +61,16 @@ export function CarePlanListPage() {
         pendingCount={summary.pendingCount}
         rejectedCount={summary.rejectedCount}
         reviewDueCount={summary.reviewDueCount}
+      />
+
+      <CarePlanFilters
+        search={search}
+        onSearchChange={setSearch}
+        status={status}
+        onStatusChange={(val) => {
+          setStatus(val as CarePlanStatus | "all");
+          setPage(1);
+        }}
       />
 
       <CarePlanTable
@@ -92,6 +93,6 @@ export function CarePlanListPage() {
           carePlanStatus: p.status,
         }))}
       />
-    </div>
+    </main>
   );
 }

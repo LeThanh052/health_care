@@ -54,10 +54,10 @@ export const CalendarHeader = ({
             <button
               key={view}
               onClick={() => onViewModeChange(view)}
-              className={`rounded-md px-4 py-1.5 text-[13px] font-medium transition-colors ${
+              className={`rounded-md px-4 py-1.5 text-[13px] font-semibold transition-colors ${
                 viewMode === view
-                  ? "bg-[#1E293B] text-white shadow-sm"
-                  : "text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "text-slate-600 hover:bg-slate-200 hover:text-slate-900"
               }`}
             >
               {view}
@@ -73,7 +73,7 @@ export const CalendarHeader = ({
         {/* Add Schedule Button */}
         <button 
           onClick={onAddClick}
-          className="flex h-8 w-8 md:h-auto md:w-auto items-center justify-center gap-1.5 rounded-lg bg-[#1E293B] md:px-4 md:py-2 text-[13px] font-medium text-white transition-colors hover:bg-slate-800"
+          className="flex h-8 w-8 md:h-auto md:w-auto items-center justify-center gap-1.5 rounded-lg bg-blue-600 md:px-4 md:py-2 text-[13px] font-semibold text-white shadow-xs transition-colors hover:bg-blue-700 active:bg-blue-800"
         >
           <Plus className="h-4 w-4" /> <span className="hidden md:inline">Add Schedule</span>
         </button>

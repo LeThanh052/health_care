@@ -246,7 +246,7 @@ export function DonReviewPage() {
         </div>
       </main>
 
-      {/* E-signature Modal — with ARIA for accessibility (tiêu chí 22) */}
+      {/* E-signature Modal — with ARIA for accessibility (Criterion 22) */}
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"

@@ -3,15 +3,13 @@ import {
   Pill, 
   Search, 
   Plus, 
-  Calendar, 
   CheckCircle2, 
   Clock, 
   AlertTriangle, 
   X, 
-  FileText,
-  User,
-  Activity,
-  RefreshCw
+  User, 
+  RefreshCw,
+  XCircle
 } from "lucide-react";
 import { PatientBanner } from "./components/patientBanner";
 import { MedicationTable } from "./components/medicationTable";
@@ -27,17 +25,17 @@ export const EmarPage: React.FC = () => {
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Search filter inside medication list
+  // Search and filter
   const [medSearch, setMedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "administered" | "missed">("all");
 
-  // Administer Modal State
+  // Administer Modal
   const [administerModalMed, setAdministerModalMed] = useState<MedicationScheduleItem | null>(null);
   const [administerStatus, setAdministerStatus] = useState<"GIVEN" | "MISSED" | "REFUSED">("GIVEN");
   const [overrideReason, setOverrideReason] = useState("");
   const [isSubmittingAdmin, setIsSubmittingAdmin] = useState(false);
 
-  // New Order Modal State
+  // New Order Modal
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
   const [newDrugName, setNewDrugName] = useState("");
   const [newDosage, setNewDosage] = useState("");
@@ -47,10 +45,9 @@ export const EmarPage: React.FC = () => {
   const [newIsControlled, setNewIsControlled] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-  // Feedback Notification
+  // Toast
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // 1. Fetch Residents on mount
   useEffect(() => {
     let active = true;
     setIsLoadingList(true);
@@ -60,7 +57,6 @@ export const EmarPage: React.FC = () => {
         if (!active) return;
         setResidents(data);
         if (data.length > 0) {
-          // Default to first active resident with medications, or first resident
           const defaultResident = data.find((r) => r.activeMedicationsCount > 0) || data[0];
           setSelectedResidentId(defaultResident.id);
         }
@@ -78,7 +74,6 @@ export const EmarPage: React.FC = () => {
     };
   }, []);
 
-  // 2. Fetch Resident Profile & Medications when selected
   const fetchMedications = (resId: string) => {
     if (!resId) return;
     setIsLoadingProfile(true);
@@ -101,7 +96,6 @@ export const EmarPage: React.FC = () => {
     }
   }, [selectedResidentId]);
 
-  // Handle Administer Submit
   const handleAdministerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!administerModalMed) return;
@@ -116,26 +110,23 @@ export const EmarPage: React.FC = () => {
 
       setFeedback({
         type: "success",
-        message: `Đã ghi nhận thành công "${administerStatus}" cho thuốc ${administerModalMed.name}. Dữ liệu đã lưu vào database!`,
+        message: `Successfully recorded ${administerStatus} for ${administerModalMed.name}. Saved to database.`,
       });
 
       setAdministerModalMed(null);
       setOverrideReason("");
       setAdministerStatus("GIVEN");
-
-      // Reload medications
       fetchMedications(selectedResidentId);
     } catch (err: any) {
       setFeedback({
         type: "error",
-        message: err.message || "Không thể ghi nhận phát thuốc.",
+        message: err.message || "Unable to record medication administration.",
       });
     } finally {
       setIsSubmittingAdmin(false);
     }
   };
 
-  // Handle New Order Submit
   const handleCreateOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDrugName || !newDosage || !selectedResidentId) return;
@@ -159,7 +150,7 @@ export const EmarPage: React.FC = () => {
 
       setFeedback({
         type: "success",
-        message: `Đã kê đơn thành công "${newDrugName}" (${newDosage}) cho cư dân. Y lệnh đã lưu vào database!`,
+        message: `Order for ${newDrugName} (${newDosage}) created successfully and stored in database.`,
       });
 
       setIsNewOrderModalOpen(false);
@@ -167,13 +158,11 @@ export const EmarPage: React.FC = () => {
       setNewDosage("");
       setNewTimes("08:00");
       setNewIsControlled(false);
-
-      // Reload
       fetchMedications(selectedResidentId);
     } catch (err: any) {
       setFeedback({
         type: "error",
-        message: err.message || "Không thể tạo y lệnh thuốc.",
+        message: err.message || "Failed to create medication order.",
       });
     } finally {
       setIsSubmittingOrder(false);
@@ -190,23 +179,24 @@ export const EmarPage: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const totalOrders = profile?.medications.length ?? 0;
   const givenCount = (profile?.medications || []).filter((m) => m.currentStatus === "administered").length;
   const dueCount = (profile?.medications || []).filter((m) => m.currentStatus === "pending").length;
   const missedCount = (profile?.medications || []).filter((m) => m.currentStatus === "missed" || m.currentStatus === "refused").length;
 
   return (
-    <div className="p-6 md:p-8 space-y-6 bg-slate-50 min-h-full">
-      {/* Page Header */}
+    <main className="p-6 md:p-8 space-y-6 bg-slate-50 min-h-full">
+      {/* Page Header (Resident-matching style) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
             <span>eMAR</span>
             <span>&gt;</span>
-            <span>Electronic Medication Administration Record</span>
+            <span>Medication Administration Record</span>
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Hồ sơ Cấp phát Thuốc Điện tử (eMAR)</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">eMAR Management</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Theo dõi, đối chiếu và ghi nhận y lệnh thuốc trực tiếp vào cơ sở dữ liệu y tế NHMS
+            Verify 5 rights, review scheduled orders, and record bedside administration directly to database
           </p>
         </div>
 
@@ -215,18 +205,18 @@ export const EmarPage: React.FC = () => {
             type="button"
             onClick={() => fetchMedications(selectedResidentId)}
             className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg shadow-2xs transition-colors"
-            title="Tải lại dữ liệu"
+            title="Refresh Data"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoadingProfile ? "animate-spin text-teal-600" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoadingProfile ? "animate-spin text-blue-600" : ""}`} />
           </button>
 
           <button
             type="button"
             onClick={() => setIsNewOrderModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-sm rounded-lg shadow-xs transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" />
-            <span>Kê y lệnh thuốc mới</span>
+            <span>+ Add Medication Order</span>
           </button>
         </div>
       </div>
@@ -254,70 +244,93 @@ export const EmarPage: React.FC = () => {
         </div>
       )}
 
-      {/* Resident Selector Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      {/* Summary KPI Cards (Matching Residents List SC_017 design) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-2xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg">
+            <Pill className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500">Active Orders</p>
+            <p className="text-2xl font-bold text-slate-900">{totalOrders}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-2xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-lg">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500">Administered (Given)</p>
+            <p className="text-2xl font-bold text-slate-900">{givenCount}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-2xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-lg">
+            <Clock className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500">Due for Round</p>
+            <p className="text-2xl font-bold text-slate-900">{dueCount}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-2xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-lg">
+            <XCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500">Missed / Refused</p>
+            <p className="text-2xl font-bold text-slate-900">{missedCount}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Resident Selector Panel */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-1">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-sm border border-teal-100 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-100 shrink-0">
             <User className="w-5 h-5" />
           </div>
           <div className="flex-1 max-w-md">
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-              Chọn Cư dân đang điều trị:
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">
+              Select Resident:
             </label>
             <select
               value={selectedResidentId}
               onChange={(e) => setSelectedResidentId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-semibold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
             >
               {residents.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name} · Phòng {r.room} · {r.code} ({r.activeMedicationsCount} thuốc)
+                  {r.name} · Room {r.room} · {r.code} ({r.activeMedicationsCount} orders)
                 </option>
               ))}
             </select>
-          </div>
-        </div>
-
-        {/* Medication Counters */}
-        <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-200">
-          <div className="px-3 py-1 text-center border-r border-slate-200">
-            <p className="text-[10px] uppercase font-bold text-slate-500">Tổng thuốc</p>
-            <p className="text-lg font-black text-slate-900">{profile?.medications.length ?? 0}</p>
-          </div>
-          <div className="px-3 py-1 text-center border-r border-slate-200">
-            <p className="text-[10px] uppercase font-bold text-emerald-600">Đã uống</p>
-            <p className="text-lg font-black text-emerald-700">{givenCount}</p>
-          </div>
-          <div className="px-3 py-1 text-center border-r border-slate-200">
-            <p className="text-[10px] uppercase font-bold text-amber-600">Đến giờ</p>
-            <p className="text-lg font-black text-amber-700">{dueCount}</p>
-          </div>
-          <div className="px-3 py-1 text-center">
-            <p className="text-[10px] uppercase font-bold text-rose-600">Bỏ lỡ</p>
-            <p className="text-lg font-black text-rose-700">{missedCount}</p>
           </div>
         </div>
       </div>
 
       {/* Patient Banner */}
       {isLoadingProfile ? (
-        <div className="bg-white rounded-2xl p-8 border border-slate-200 text-center">
+        <div className="bg-white rounded-xl p-8 border border-slate-200 text-center shadow-2xs">
           <LoadingState />
         </div>
       ) : profile ? (
         <PatientBanner resident={profile.resident} />
       ) : null}
 
-      {/* Medication Filters & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+      {/* Filter and Search Bar */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Tìm kiếm thuốc, liều lượng..."
+            placeholder="Search medications by name, dosage..."
             value={medSearch}
             onChange={(e) => setMedSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -327,13 +340,13 @@ export const EmarPage: React.FC = () => {
               key={st}
               type="button"
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 statusFilter === st
-                  ? "bg-teal-600 text-white shadow-2xs"
+                  ? "bg-blue-600 text-white shadow-2xs"
                   : "bg-slate-100 hover:bg-slate-200 text-slate-600"
               }`}
             >
-              {st === "all" ? "Tất cả" : st === "pending" ? "Đến giờ (Due)" : st === "administered" ? "Đã uống (Given)" : "Bỏ lỡ (Missed)"}
+              {st === "all" ? "All Orders" : st === "pending" ? "Due" : st === "administered" ? "Given" : "Missed"}
             </button>
           ))}
         </div>
@@ -352,8 +365,8 @@ export const EmarPage: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900">Ghi nhận Phát thuốc</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Xác nhận việc cấp phát y lệnh thuốc cho cư dân</p>
+                <h3 className="text-base font-extrabold text-slate-900">Record Administration</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Confirm medication intake for resident</p>
               </div>
               <button
                 type="button"
@@ -365,27 +378,27 @@ export const EmarPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleAdministerSubmit} className="p-5 space-y-4">
-              <div className="p-3 bg-teal-50/70 border border-teal-100 rounded-xl space-y-1">
-                <span className="text-xs font-bold text-teal-800 uppercase tracking-wider">Thông tin y lệnh</span>
-                <p className="text-sm font-black text-slate-900">{administerModalMed.name} ({administerModalMed.dosage})</p>
-                <p className="text-xs text-slate-600">Đường dùng: {administerModalMed.route} · Tần suất: {administerModalMed.frequency}</p>
-                <p className="text-xs text-slate-500">Cư dân: <strong className="text-slate-800">{profile?.resident.name}</strong> (Phòng {profile?.resident.room})</p>
+              <div className="p-3.5 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1">
+                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">Order Verification</span>
+                <p className="text-sm font-bold text-slate-900">{administerModalMed.name} ({administerModalMed.dosage})</p>
+                <p className="text-xs text-slate-600">Route: {administerModalMed.route} · Frequency: {administerModalMed.frequency}</p>
+                <p className="text-xs text-slate-500">Resident: <strong className="text-slate-800">{profile?.resident.name}</strong> (Room {profile?.resident.room})</p>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">Kết quả phát thuốc:</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1.5">Administration Result:</label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: "GIVEN", label: "Đã uống (Given)", color: "border-emerald-500 bg-emerald-50 text-emerald-800" },
-                    { id: "MISSED", label: "Bỏ lỡ (Missed)", color: "border-rose-500 bg-rose-50 text-rose-800" },
-                    { id: "REFUSED", label: "Từ chối (Refused)", color: "border-slate-500 bg-slate-100 text-slate-800" },
+                    { id: "GIVEN", label: "Given", color: "border-emerald-500 bg-emerald-50 text-emerald-800" },
+                    { id: "MISSED", label: "Missed", color: "border-rose-500 bg-rose-50 text-rose-800" },
+                    { id: "REFUSED", label: "Refused", color: "border-slate-500 bg-slate-100 text-slate-800" },
                   ].map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
                       onClick={() => setAdministerStatus(opt.id as any)}
                       className={`py-2 px-2 text-xs font-bold rounded-lg border text-center transition-all ${
-                        administerStatus === opt.id ? opt.color + " ring-2 ring-teal-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                        administerStatus === opt.id ? opt.color + " ring-2 ring-blue-500" : "border-slate-200 text-slate-600 hover:bg-slate-50"
                       }`}
                     >
                       {opt.label}
@@ -395,15 +408,15 @@ export const EmarPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Ghi chú lâm sàng / Lý do (nếu bỏ lỡ hoặc từ chối):
+                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                  Clinical Notes / Reason (required if missed or refused):
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Ghi chú điều dưỡng, tình trạng cư dân khi uống thuốc..."
+                  placeholder="Document clinical observation, tolerance, or refusal explanation..."
                   value={overrideReason}
                   onChange={(e) => setOverrideReason(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -411,17 +424,17 @@ export const EmarPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setAdministerModalMed(null)}
-                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
                 >
-                  Hủy bỏ
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingAdmin}
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
                 >
                   {isSubmittingAdmin ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                  <span>Xác nhận & Lưu Database</span>
+                  <span>Save to Database</span>
                 </button>
               </div>
             </form>
@@ -435,9 +448,9 @@ export const EmarPage: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900">Kê y lệnh thuốc mới</h3>
+                <h3 className="text-base font-extrabold text-slate-900">New Medication Order</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Tạo chỉ định dùng thuốc cho cư dân <strong className="text-slate-800">{profile?.resident.name}</strong>
+                  Prescribe medication for <strong className="text-slate-800">{profile?.resident.name}</strong>
                 </p>
               </div>
               <button
@@ -452,66 +465,66 @@ export const EmarPage: React.FC = () => {
             <form onSubmit={handleCreateOrderSubmit} className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Tên thuốc (Biệt dược / Hoạt chất):</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Medication Name & Generic:</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ví dụ: Amlodipine, Metformin, Paracetamol..."
+                    placeholder="e.g. Amlodipine, Lisinopril, Donepezil..."
                     value={newDrugName}
                     onChange={(e) => setNewDrugName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Liều lượng (Dosage):</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Dosage:</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ví dụ: 5mg, 500mg, 1 viên..."
+                    placeholder="e.g. 5mg, 10mg, 500mg..."
                     value={newDosage}
                     onChange={(e) => setNewDosage(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Đường dùng (Route):</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Route:</label>
                   <select
                     value={newRoute}
                     onChange={(e) => setNewRoute(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   >
-                    <option>PO (Oral - Đường uống)</option>
-                    <option>IV (Intravenous - Tiêm tĩnh mạch)</option>
-                    <option>IM (Intramuscular - Tiêm bắp)</option>
-                    <option>SubQ (Tiêm dưới da)</option>
-                    <option>Topical (Bôi ngoài da)</option>
-                    <option>Inhalation (Khí dung)</option>
+                    <option>PO (Oral)</option>
+                    <option>IV (Intravenous)</option>
+                    <option>IM (Intramuscular)</option>
+                    <option>SubQ (Subcutaneous)</option>
+                    <option>Topical</option>
+                    <option>Inhalation</option>
                   </select>
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Tần suất & Hướng dẫn:</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Frequency & Instructions:</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ví dụ: Ngày 1 lần buổi sáng sau ăn..."
+                    placeholder="e.g. Once daily in the morning with breakfast..."
                     value={newFrequency}
                     onChange={(e) => setNewFrequency(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Khung giờ phát thuốc (cách nhau dấu phẩy):</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1">Schedule Times (comma separated):</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ví dụ: 08:00, 20:00"
+                    placeholder="e.g. 08:00, 20:00"
                     value={newTimes}
                     onChange={(e) => setNewTimes(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-medium text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -521,10 +534,10 @@ export const EmarPage: React.FC = () => {
                     id="controlledSubstance"
                     checked={newIsControlled}
                     onChange={(e) => setNewIsControlled(e.target.checked)}
-                    className="w-4 h-4 text-teal-600 rounded border-slate-300"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300"
                   />
                   <label htmlFor="controlledSubstance" className="text-xs font-semibold text-slate-700 cursor-pointer">
-                    Thuộc danh mục thuốc kiểm soát đặc biệt (Controlled Substance)
+                    Controlled Substance Schedule II-IV
                   </label>
                 </div>
               </div>
@@ -533,23 +546,23 @@ export const EmarPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsNewOrderModalOpen(false)}
-                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                  className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
                 >
-                  Hủy bỏ
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingOrder}
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5"
                 >
                   {isSubmittingOrder ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                  <span>Lưu Y lệnh vào Database</span>
+                  <span>Save Order to Database</span>
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 };

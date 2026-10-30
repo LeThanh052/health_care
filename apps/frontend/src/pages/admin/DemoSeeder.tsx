@@ -268,13 +268,13 @@ export default function DemoSeeder() {
               </div>
               <p className="text-sm text-slate-600 leading-relaxed">
                 {confirmModal.type === "seed-all" &&
-                  "Bạn có chắc muốn tạo toàn bộ dữ liệu demo không? Thao tác này sẽ thêm các dữ liệu mẫu vào hệ thống."}
+                  "Are you sure you want to seed all demo data? This will generate comprehensive sample records across the system."}
                 {confirmModal.type === "reset-all" &&
-                  "Bạn có chắc muốn xóa toàn bộ dữ liệu demo không? Thao tác này sẽ dọn dẹp các hồ sơ mẫu khỏi hệ thống."}
+                  "Are you sure you want to reset all demo data? This will clean up all sample records from the system."}
                 {confirmModal.type === "load-dataset" &&
-                  `Bạn có chắc muốn tạo dữ liệu demo cho ${confirmModal.datasetName} không?`}
+                  `Are you sure you want to seed demo data for ${confirmModal.datasetName}?`}
                 {confirmModal.type === "clear-dataset" &&
-                  `Bạn có chắc muốn xóa dữ liệu demo của ${confirmModal.datasetName} không?`}
+                  `Are you sure you want to clear demo data for ${confirmModal.datasetName}?`}
               </p>
             </div>
             <div className="bg-slate-50 px-6 py-4 flex justify-end gap-3 border-t border-slate-100">

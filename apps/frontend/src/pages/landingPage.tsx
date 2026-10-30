@@ -19,25 +19,25 @@ const featureCards = [
     icon: Users,
     title: "Resident 360°",
     description:
-      "Quản lý hồ sơ cư dân, trạng thái nhập viện, mức độ chăm sóc và thông tin liên hệ trong một màn hình.",
+      "Comprehensive resident profiles, admission status, care level classifications, and emergency contacts in one unified view.",
   },
   {
     icon: ClipboardList,
     title: "Care Plan",
     description:
-      "Theo dõi vấn đề sức khỏe, mục tiêu điều trị, can thiệp chăm sóc và ghi chú quan sát hằng ngày.",
+      "Monitor health conditions, individualized treatment goals, scheduled interventions, and daily observation records.",
   },
   {
     icon: Pill,
     title: "eMAR Medicine",
     description:
-      "Kiểm soát lịch dùng thuốc, trạng thái cấp phát và cảnh báo an toàn cho điều dưỡng.",
+      "Streamline electronic medication administration, dose tracking, safety verification alerts, and allergy safeguards.",
   },
   {
     icon: Calendar,
     title: "Doctor Schedule",
     description:
-      "Lên lịch bác sĩ, quản lý ca khám, cuộc hẹn và phân bổ nguồn lực theo ngày/tuần.",
+      "Manage physician shifts, specialist rounds, clinical appointments, and facility resource allocations.",
   },
 ];
 
@@ -58,15 +58,15 @@ const stats = [
 const roleCards = [
   {
     title: "Administrator",
-    description: "Tổng quan vận hành, cư dân, lịch, báo cáo và phân quyền người dùng.",
+    description: "Facility operations overview, resident roster, staffing schedules, compliance reports, and RBAC governance.",
   },
   {
     title: "Nurse / Care Staff",
-    description: "Cập nhật chăm sóc, thuốc, quan sát, cảnh báo và tình trạng cư dân.",
+    description: "Real-time care updates, medication administration, observations, incident alerts, and resident condition tracking.",
   },
   {
     title: "Doctor / Physician",
-    description: "Theo dõi lịch khám, hồ sơ lâm sàng, kế hoạch chăm sóc và chỉ định.",
+    description: "Clinical encounter logs, treatment orders, progress evaluations, and multidisciplinary care plan authorizations.",
   },
 ];
 
@@ -108,22 +108,20 @@ export function LandingPage() {
           </span>
 
           <h1>
-            Quản lý viện dưỡng lão thông minh, an toàn và dễ sử dụng hơn.
+            Intelligent, Safe, and Seamless Nursing Home Management.
           </h1>
 
           <p>
-            Landing page này được thiết kế theo phong cách healthcare SaaS hiện
-            đại: bố cục sạch, màu xanh y tế, thẻ thông tin nổi, CTA rõ ràng và
-            phù hợp với hệ thống Nursing Home Management System của nhóm.
+            WellNest provides a modern, healthcare-first operations platform designed for long-term care facilities, assisted living, and skilled nursing homes.
           </p>
 
           <div className="landing-hero__actions">
             <Link className="landing-primary-btn" to={APP_ROUTES.LOGIN}>
-              Đăng nhập hệ thống
+              Sign In to System
               <ArrowRight size={18} />
             </Link>
             <Link className="landing-secondary-btn" to={APP_ROUTES.DASHBOARD}>
-              Xem dashboard demo
+              Explore Demo Dashboard
             </Link>
           </div>
 
@@ -206,10 +204,9 @@ export function LandingPage() {
       <section className="landing-section" id="features">
         <div className="landing-section__heading">
           <span className="landing-eyebrow">Core modules</span>
-          <h2>Các chức năng chính đã sẵn sàng để vào hệ thống</h2>
+          <h2>Integrated modules engineered for patient-first care</h2>
           <p>
-            Landing page đóng vai trò cửa ngõ trước đăng nhập, giúp người dùng
-            hiểu nhanh hệ thống có gì trước khi vào các module nội bộ.
+            Everything your clinical and administrative teams need to deliver quality care, ensure regulatory compliance, and optimize operations.
           </p>
         </div>
 
@@ -233,10 +230,9 @@ export function LandingPage() {
       <section className="landing-workflow" id="workflow">
         <div>
           <span className="landing-eyebrow">Simple workflow</span>
-          <h2>Quy trình chăm sóc rõ ràng từ tiếp nhận đến theo dõi</h2>
+          <h2>Streamlined clinical lifecycle from intake to continuous care</h2>
           <p>
-            Giao diện được chia thành các bước nghiệp vụ quen thuộc để BA, DEV,
-            Tester và người dùng cuối dễ hiểu khi demo dự án.
+            A standardized, transparent progression that keeps interdisciplinary teams aligned and family members informed.
           </p>
         </div>
 
@@ -252,8 +248,8 @@ export function LandingPage() {
 
       <section className="landing-section landing-section--roles" id="roles">
         <div className="landing-section__heading">
-          <span className="landing-eyebrow">Role based access</span>
-          <h2>Phù hợp cho nhiều vai trò trong viện dưỡng lão</h2>
+          <span className="landing-eyebrow">Role-based access</span>
+          <h2>Tailored workspaces for every member of the care team</h2>
         </div>
 
         <div className="landing-role-grid">
@@ -271,20 +267,19 @@ export function LandingPage() {
 
       <section className="landing-cta">
         <div>
-          <span className="landing-eyebrow">Ready to start</span>
-          <h2>Bắt đầu sử dụng WellNest NHMS</h2>
+          <span className="landing-eyebrow">Ready to get started</span>
+          <h2>Experience Modern Care Management with WellNest</h2>
           <p>
-            Vào trang đăng nhập để tiếp tục hoặc mở dashboard demo để xem nhanh
-            các module đã được gộp trong project.
+            Sign in to access your assigned care portal or explore the live interactive demo dashboard.
           </p>
         </div>
         <div className="landing-cta__actions">
           <Link className="landing-primary-btn" to={APP_ROUTES.LOGIN}>
-            Đăng nhập
+            Sign In
             <ArrowRight size={18} />
           </Link>
           <Link className="landing-secondary-btn landing-secondary-btn--light" to={APP_ROUTES.DASHBOARD}>
-            Xem demo
+            View Live Demo
           </Link>
         </div>
       </section>
