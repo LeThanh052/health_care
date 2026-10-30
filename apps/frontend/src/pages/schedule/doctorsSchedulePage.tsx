@@ -8,7 +8,7 @@ import { AddScheduleModal } from "./components/addScheduleModal";
 import type { ViewMode } from "./types";
 
 export const DoctorsSchedulePage = () => {
-  const [currentMonth, setCurrentMonth] = useState(new Date(2028, 6, 1));
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("Month");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 

@@ -117,7 +117,9 @@ export const MedicationTable: React.FC<MedicationTableProps> = ({ medications, o
                   </td>
 
                   <td className="py-4 px-4">
-                    <span className="text-xs font-medium text-slate-700">{med.prescribedBy}</span>
+                    <span className="text-xs font-medium text-slate-700">
+                      {med.prescribedBy?.replace(/^Dr\.\s*Dr\./i, "Dr.") || "Dr. Robert Chen"}
+                    </span>
                   </td>
 
                   <td className="py-4 px-4">

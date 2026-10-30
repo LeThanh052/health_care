@@ -62,7 +62,7 @@ export function DonDashboard() {
             )}
 
             <div className="mb-8">
-                <DashboardSection title="Care Plans Pending Review" linkText="View all" linkTo="/residents">
+                <DashboardSection title="Care Plans Pending Review" linkText="View all" linkTo="/care-plans">
                     {dashboard.carePlansPendingReview.length === 0 ? (
                         <div className="p-6 text-center text-sm text-slate-500">No care plans pending review.</div>
                     ) : (

@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 export const getMockSchedules = (year: number, month: number): Record<number, DoctorSchedule[]> => {
   return {
     1: [
-      { id: "01", doctorId: "d4", doctorName: "Dr. Petra Winsburry", time: "09:00 AM", colorVariant: "blue" },
+      { id: "01", doctorId: "d6", doctorName: "Dr. Robert Chen", time: "09:00 AM", description: "Geriatric Care & Clinical Rounds", colorVariant: "blue" },
       { id: "02", doctorId: "d5", doctorName: "Dr. Emily Smith", time: "10:00 AM", colorVariant: "teal" },
     ],
     3: [

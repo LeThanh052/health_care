@@ -14,6 +14,8 @@ import {
   ChevronDown,
   User as UserIcon,
   PlusCircle,
+  Calendar,
+  CheckSquare,
 } from "lucide-react";
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { APP_ROUTES } from "../constants/appRoutes";
@@ -44,7 +46,9 @@ export function AppLayout() {
     { label: "Dashboard", to: APP_ROUTES.DASHBOARD, icon: Home, end: true },
     { label: "Residents", to: APP_ROUTES.RESIDENTS, icon: Users, end: false },
     { label: "Care Planning", to: APP_ROUTES.CARE_PLANS, icon: ClipboardList, end: false },
+    { label: "Daily Tasks", to: "/care-tasks/today", icon: CheckSquare, end: false },
     { label: "eMAR", to: APP_ROUTES.EMAR, icon: Stethoscope, end: true },
+    { label: "Doctor Schedule", to: "/doctor-schedule", icon: Calendar, end: false },
     { label: "Incident & Risk", to: APP_ROUTES.INCIDENTS, icon: ShieldAlert, end: false },
     { label: "Reports", to: "/reports", icon: FileText, end: false },
   ];

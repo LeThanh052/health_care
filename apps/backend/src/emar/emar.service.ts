@@ -205,7 +205,9 @@ export class EmarService {
                 status: order.status,
                 currentStatus,
                 isControlledSubstance: order.is_controlled_substance,
-                prescribedBy: order.users ? `Dr. ${order.users.firstName} ${order.users.lastName}` : "Dr. Robert Chen, MD",
+                prescribedBy: order.users
+                    ? `${order.users.firstName.startsWith("Dr.") ? order.users.firstName : `Dr. ${order.users.firstName}`} ${order.users.lastName}`
+                    : "Dr. Robert Chen, MD",
                 logs,
             };
         });

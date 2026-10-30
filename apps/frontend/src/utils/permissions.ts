@@ -7,8 +7,7 @@ export function getEffectiveUser(): User | null {
 
 /**
  * Checks if the user has permission to create, edit, or pre-screen residents.
- * Only 'Admission Staff' and 'System Admin' / 'Administrator' roles are permitted.
- * Nurse, Physician, CNA, Dietary, DON etc. are strictly read-only.
+ * Permitted for Admission Staff, DON (Director of Nursing), and System Admin.
  */
 export function canManageResidents(user?: User | null): boolean {
     const target = user !== undefined ? user : getEffectiveUser();
@@ -17,5 +16,10 @@ export function canManageResidents(user?: User | null): boolean {
     const rawRole = target.roleName ?? (target as any).role?.roleName ?? (target as any).role ?? "";
     const roleLower = String(rawRole).trim().toLowerCase();
 
-    return roleLower.includes("admission") || roleLower.includes("admin");
+    return (
+        roleLower.includes("admission") ||
+        roleLower.includes("admin") ||
+        roleLower.includes("don") ||
+        roleLower.includes("director")
+    );
 }

@@ -179,7 +179,7 @@ function App() {
                 <Route
                     path="/residents/create"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
+                        <ProtectedRoute allowedRoles={["Admission", "Admin", "DON", "Director"]} fallbackPath="/residents">
                             <ResidentFormPage />
                         </ProtectedRoute>
                     }
@@ -187,7 +187,7 @@ function App() {
                 <Route
                     path="/residents/reception"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
+                        <ProtectedRoute allowedRoles={["Admission", "Admin", "DON", "Director"]} fallbackPath="/residents">
                             <ResidentReceptionPage />
                         </ProtectedRoute>
                     }
@@ -196,7 +196,7 @@ function App() {
                 <Route
                     path="/residents/:id/edit"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
+                        <ProtectedRoute allowedRoles={["Admission", "Admin", "DON", "Director"]} fallbackPath="/residents">
                             <ResidentFormPage />
                         </ProtectedRoute>
                     }
@@ -207,7 +207,7 @@ function App() {
                 <Route
                     path="/admissions/pre-screening"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
+                        <ProtectedRoute allowedRoles={["Admission", "Admin", "DON", "Director", "Nurse"]} fallbackPath="/residents">
                             <ResidentReceptionPage />
                         </ProtectedRoute>
                     }
@@ -215,7 +215,7 @@ function App() {
                 <Route
                     path="/admissions/new"
                     element={
-                        <ProtectedRoute allowedRoles={["Admission", "Admin"]} fallbackPath="/residents">
+                        <ProtectedRoute allowedRoles={["Admission", "Admin", "DON", "Director", "Nurse"]} fallbackPath="/residents">
                             <AdmissionFormPage />
                         </ProtectedRoute>
                     }
