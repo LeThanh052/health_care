@@ -35,7 +35,7 @@ export function CarePlanTable({ carePlans, isLoading, page, total, onPageChange 
               <th className="px-6 py-3.5">Last Review</th>
               <th className="px-6 py-3.5">Next Review</th>
               <th className="px-6 py-3.5">Assigned Staff</th>
-              <th className="px-6 py-3.5 text-right">Actions</th>
+              <th className="px-6 py-3.5">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -80,38 +80,10 @@ export function CarePlanTable({ carePlans, isLoading, page, total, onPageChange 
                     )}
                   </td>
                   <td className="px-6 py-4 text-slate-700 text-xs">{cp.assigned}</td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {cp.status === "approved" ? (
-                        <Link
-                          to={`${APP_ROUTES.CARE_PLANS}/${cp.id}/acknowledge`}
-                          className="px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-md transition-colors"
-                        >
-                          Acknowledge
-                        </Link>
-                      ) : cp.status === "pending_review" ? (
-                        <Link
-                          to={`${APP_ROUTES.CARE_PLANS}/${cp.id}/review`}
-                          className="px-2.5 py-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition-colors"
-                        >
-                          Review
-                        </Link>
-                      ) : cp.status === "draft" || cp.status === "rejected" ? (
-                        <Link
-                          to={`${APP_ROUTES.CARE_PLANS}/${cp.id}/edit`}
-                          className="px-2.5 py-1 text-xs font-medium text-slate-700 hover:text-blue-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-md transition-colors"
-                        >
-                          Edit
-                        </Link>
-                      ) : null}
-                      {cp.status !== "pending_review" && (
-                        <Link
-                          to={`${APP_ROUTES.CARE_PLANS}/${cp.id}`}
-                          className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors"
-                        >
-                          View
-                        </Link>
-                      )}
+                  <td className="px-6 py-4">
+                    <div className="table-actions">
+                      <Link to={`${APP_ROUTES.CARE_PLANS}/${cp.id}`}>View</Link>
+                      <Link to={`${APP_ROUTES.CARE_PLANS}/${cp.id}/edit`}>Edit</Link>
                     </div>
                   </td>
                 </tr>
