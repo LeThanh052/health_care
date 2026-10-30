@@ -11,7 +11,16 @@ export class CarePlansService {
         const plans = await this.prisma.care_plans.findMany({
             take: 50, // Pagination limit (Performance)
             include: {
-                residents: true,
+                residents: {
+                    include: {
+                        beds: { include: { rooms: true } },
+                        resident_care_level_history: {
+                            where: { end_date: null },
+                            include: { care_levels: true },
+                            take: 1,
+                        },
+                    },
+                },
                 users: true,
             },
             orderBy: { created_at: 'desc' }

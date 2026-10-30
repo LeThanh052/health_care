@@ -12,7 +12,8 @@ export default function IncidentDetail() {
     const queryClient = useQueryClient();
     const { id = "" } = useParams();
     const user = session.getUser();
-    const canManage = user?.roleName === "System Admin" || user?.roleName === "DON (Director of Nursing)";
+    const roleLower = String(user?.roleName ?? "").toLowerCase();
+    const canManage = roleLower.includes("admin") || roleLower.includes("don") || roleLower.includes("director");
     const query = useQuery({ queryKey: ["incident", id], queryFn: () => incidentsService.getIncidentById(id), enabled: Boolean(id), refetchInterval: 60_000 });
     const [investigation, setInvestigation] = useState({ rootCause: "", correctiveAction: "", preventiveAction: "", witnesses: "" });
     const [note, setNote] = useState("");

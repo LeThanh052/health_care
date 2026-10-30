@@ -11,6 +11,8 @@ import { CareTasksModule } from "./care-tasks/care-tasks.module.js";
 import { DashboardModule } from "./dashboard/dashboard.module.js";
 import { DemoDataModule } from "./demo-data/demo-data.module.js";
 import { EquipmentSuppliesModule } from "./equipment-supplies/equipment-supplies.module.js";
+import { EmarModule } from "./emar/emar.module.js";
+import { ReportsModule } from "./reports/reports.module.js";
 import { FacilitiesModule } from "./facilities/facilities.module.js";
 import { HolidaysModule } from "./holidays/holidays.module.js";
 import { IncidentSeveritiesModule } from "./incident-severities/incident-severities.module.js";
@@ -46,6 +48,8 @@ import { VitalsModule } from "./vitals/vitals.module.js";
         VitalsModule,
         BillingModule,
         EquipmentSuppliesModule,
+        EmarModule,
+        ReportsModule,
     ],
     controllers: [AppController],
     providers: [AppService],

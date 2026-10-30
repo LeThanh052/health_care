@@ -12,6 +12,11 @@ export function mapResidentSummary(r: any) {
 
 export function mapCarePlanSummary(p: any) {
         if (!p) return null;
+        const room = p.residents?.beds?.rooms?.room_number
+                ? `${p.residents.beds.rooms.room_number}${p.residents.beds.bed_number ? '-' + p.residents.beds.bed_number : ''}`
+                : 'Unassigned';
+        const locTier = p.residents?.resident_care_level_history?.[0]?.care_levels?.level_name ?? 'Tier 1 - Low';
+
         return {
                 ...p,
                 residentId: p.resident_id,
@@ -20,7 +25,13 @@ export function mapCarePlanSummary(p: any) {
                 isDeleted: p.is_deleted,
                 createdAt: p.created_at,
                 updatedAt: p.updated_at,
-                resident: mapResidentSummary(p.residents),
+                room,
+                locTier,
+                resident: {
+                        ...mapResidentSummary(p.residents),
+                        room,
+                        locTier,
+                },
                 creator: p.users,
         };
 }

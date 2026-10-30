@@ -21,6 +21,7 @@ import { DonReviewPage } from "./pages/carePlan/donReviewPage";
 import { IdtAcknowledgmentPage } from "./pages/carePlan/idtAcknowledgmentPage";
 import DashboardRouter from "./pages/dashboard/DashboardRouter";
 import { EmarPage } from "./pages/emar/emarPage";
+import { ReportsPage } from "./pages/reports/ReportsPage";
 import FacilitySettingsPage from "./pages/facilities/FacilitySettingsPage";
 import IncidentSeverityLevels from "./pages/incidentSeverity/IncidentSeverityLevels";
 import EquipmentForm from "./pages/inventory/EquipmentForm";
@@ -264,6 +265,7 @@ function App() {
 
                 <Route path="/doctor-schedule" element={<DoctorsSchedulePage />} />
                 <Route path="/emar" element={<EmarPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
             </Route>
 
             <Route path="/" element={<Navigate to="/login" replace />} />

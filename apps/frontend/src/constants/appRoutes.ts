@@ -15,6 +15,7 @@ export const APP_ROUTES = {
     INCIDENT_REPORT: "/incidents/report",
     DOCTOR_SCHEDULE: "/doctor-schedule",
     EMAR: "/emar",
+    REPORTS: "/reports",
     CARE_PLANS: "/care-plans",
     CREATE_CARE_PLAN: "/care-plans/new",
     CARE_PLAN: "/care-plans/:id",

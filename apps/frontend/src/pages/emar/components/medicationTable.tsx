@@ -1,129 +1,147 @@
-import { Pill, Clock, CheckCircle, XCircle } from "lucide-react";
+import React from "react";
+import { Pill, Clock, CheckCircle2, XCircle, AlertCircle, ShieldAlert } from "lucide-react";
+import type { MedicationScheduleItem } from "../../../services/emar";
 
-export const medications = [
-  {
-    id: "m1",
-    name: "Amoxicillin",
-    dosage: "500mg",
-    route: "PO (Oral)",
-    frequency: "TID (3 times/day)",
-    schedule: ["08:00", "14:00", "20:00"],
-    status: { "08:00": "administered", "14:00": "pending", "20:00": "pending" },
-    notes: "Take with food",
-    type: "antibiotic"
-  },
-  {
-    id: "m2",
-    name: "Lisinopril",
-    dosage: "10mg",
-    route: "PO (Oral)",
-    frequency: "QD (Daily)",
-    schedule: ["08:00"],
-    status: { "08:00": "missed" },
-    notes: "Monitor blood pressure",
-    type: "cardiac"
-  },
-  {
-    id: "m3",
-    name: "Morphine Sulfate",
-    dosage: "4mg",
-    route: "IV",
-    frequency: "Q4H PRN",
-    schedule: ["PRN"],
-    status: { "PRN": "pending" },
-    notes: "For severe pain > 7/10",
-    type: "analgesic"
+interface MedicationTableProps {
+  medications: MedicationScheduleItem[];
+  onAdminister: (med: MedicationScheduleItem) => void;
+  isChartLocked?: boolean;
+}
+
+export const MedicationTable: React.FC<MedicationTableProps> = ({ medications, onAdminister, isChartLocked }) => {
+  const getStatusBadge = (status: MedicationScheduleItem["currentStatus"]) => {
+    switch (status) {
+      case "administered":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Đã uống / Given
+          </span>
+        );
+      case "missed":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            <XCircle className="w-3.5 h-3.5" /> Bỏ lỡ / Missed
+          </span>
+        );
+      case "refused":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            <AlertCircle className="w-3.5 h-3.5" /> Từ chối / Refused
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
+            <Clock className="w-3.5 h-3.5" /> Đến giờ / Due
+          </span>
+        );
+    }
+  };
+
+  if (medications.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+        <Pill className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+        <h3 className="text-base font-bold text-slate-800">Không có y lệnh thuốc đang hiệu lực</h3>
+        <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          Cư dân này hiện chưa có chỉ định dùng thuốc trong đợt điều trị hiện tại hoặc đã ngưng y lệnh.
+        </p>
+      </div>
+    );
   }
-];
-
-export const MedicationTable = () => {
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
-      case 'administered': return <CheckCircle className="w-5 h-5 text-emerald-500" />;
-      case 'missed': return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'pending': return <Clock className="w-5 h-5 text-amber-500" />;
-      default: return null;
-    }
-  };
-
-  const getStatusBadge = (status?: string) => {
-    switch (status) {
-      case 'administered': 
-        return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">Given</span>;
-      case 'missed': 
-        return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">Missed</span>;
-      case 'pending': 
-        return <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">Due</span>;
-      default: return null;
-    }
-  };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse text-sm">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-1/3">Medication Details</th>
-              <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">08:00</th>
-              <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">14:00</th>
-              <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">20:00</th>
-              <th className="py-4 px-6 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">PRN</th>
+            <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <th className="py-3.5 px-5">Thuốc & Liều lượng</th>
+              <th className="py-3.5 px-4">Đường dùng & Tần suất</th>
+              <th className="py-3.5 px-4">Lịch phát trong ngày</th>
+              <th className="py-3.5 px-4">Bác sĩ kê đơn</th>
+              <th className="py-3.5 px-4">Trạng thái hiện tại</th>
+              <th className="py-3.5 px-5 text-right">Thao tác điều dưỡng</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200">
-            {medications.map((med) => (
-              <tr key={med.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="py-4 px-6 align-top">
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg mt-1 ${med.type === 'antibiotic' ? 'bg-indigo-100 text-indigo-600' : med.type === 'cardiac' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                      <Pill className="w-5 h-5" />
+          <tbody className="divide-y divide-slate-100">
+            {medications.map((med) => {
+              const latestLog = med.logs[0];
+
+              return (
+                <tr key={med.id} className="hover:bg-slate-50/70 transition-colors">
+                  <td className="py-4 px-5">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-100 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <Pill className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 text-sm leading-tight">{med.name}</span>
+                          {med.isControlledSubstance && (
+                            <span className="text-[10px] font-black uppercase px-1.5 py-0.5 bg-rose-100 text-rose-800 rounded border border-rose-200">
+                              Thuốc kiểm soát đặc biệt
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-slate-600 block mt-0.5">
+                          Liều lượng: <span className="text-slate-900 font-bold">{med.dosage}</span>
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900 group-hover:text-[#0F766E] transition-colors">{med.name}</h3>
-                      <p className="text-sm font-medium text-slate-600 mt-1">{med.dosage} • {med.route}</p>
-                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {med.frequency}
+                  </td>
+
+                  <td className="py-4 px-4">
+                    <div className="text-xs">
+                      <span className="font-semibold text-slate-800 block">{med.route}</span>
+                      <span className="text-slate-500 mt-0.5 block">{med.frequency}</span>
+                    </div>
+                  </td>
+
+                  <td className="py-4 px-4">
+                    <div className="flex flex-wrap gap-1.5">
+                      {med.schedule.map((time, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 bg-slate-100 text-slate-700 text-xs font-mono font-bold rounded-md border border-slate-200"
+                        >
+                          {time}
+                        </span>
+                      ))}
+                    </div>
+                    {latestLog && (
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Gần nhất: {new Date(latestLog.loggedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} bởi {latestLog.administeredBy}
                       </p>
-                      {med.notes && (
-                        <p className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 inline-block mt-2 font-medium">
-                          {med.notes}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                
-                {/* Time Slots */}
-                {["08:00", "14:00", "20:00", "PRN"].map((time) => {
-                  const status = med.status[time as keyof typeof med.status];
-                  const isScheduled = med.schedule.includes(time);
-                  
-                  return (
-                    <td key={time} className="py-4 px-4 align-top text-center border-l border-slate-100">
-                      {isScheduled ? (
-                        <div className="flex flex-col items-center justify-center gap-2 h-full min-h-[100px]">
-                          {getStatusIcon(status)}
-                          {getStatusBadge(status)}
-                          {status === 'pending' && (
-                            <button className="mt-2 px-3 py-1.5 bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95">
-                              Administer
-                            </button>
-                          )}
-                          {status === 'missed' && (
-                            <span className="text-xs text-slate-400 mt-1">Reason required</span>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-full min-h-[100px]">
-                          <span className="w-4 h-px bg-slate-300"></span>
-                        </div>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                    )}
+                  </td>
+
+                  <td className="py-4 px-4">
+                    <span className="text-xs font-medium text-slate-700">{med.prescribedBy}</span>
+                  </td>
+
+                  <td className="py-4 px-4">
+                    {getStatusBadge(med.currentStatus)}
+                  </td>
+
+                  <td className="py-4 px-5 text-right">
+                    <button
+                      type="button"
+                      disabled={isChartLocked}
+                      onClick={() => onAdminister(med)}
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-lg shadow-2xs transition-colors ${
+                        isChartLocked
+                          ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                          : "bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white"
+                      }`}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Ghi nhận / Administer</span>
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

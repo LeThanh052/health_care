@@ -14,8 +14,8 @@ export const useCarePlans = (query: CarePlanListQuery) => {
         residentName: cp.resident
           ? `${cp.resident.firstName} ${cp.resident.lastName}`
           : 'Unknown Resident',
-        room: '101A',
-        locTier: 'Tier 2',
+        room: cp.room || cp.resident?.room || 'Unassigned',
+        locTier: cp.locTier || cp.resident?.locTier || 'Tier 2',
         status: cp.status.toLowerCase().replace(' ', '_') as CarePlan['status'],
         lastReview: cp.updatedAt ? new Date(cp.updatedAt).toISOString().split('T')[0] : null,
         nextReview: null,

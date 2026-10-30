@@ -34,11 +34,17 @@ export function AppLayout() {
   const displayRole = user?.roleName || "Nurse";
   const initials = user ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}` : "AL";
 
-  const navigationItems = [
+  const navigationItems: {
+    label: string;
+    to: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+    end: boolean;
+    badge?: string;
+  }[] = [
     { label: "Dashboard", to: APP_ROUTES.DASHBOARD, icon: Home, end: true },
     { label: "Residents", to: APP_ROUTES.RESIDENTS, icon: Users, end: false },
     { label: "Care Planning", to: APP_ROUTES.CARE_PLANS, icon: ClipboardList, end: false },
-    { label: "eMAR", to: APP_ROUTES.EMAR, icon: Stethoscope, end: true, badge: "soon" },
+    { label: "eMAR", to: APP_ROUTES.EMAR, icon: Stethoscope, end: true },
     { label: "Incident & Risk", to: APP_ROUTES.INCIDENTS, icon: ShieldAlert, end: false },
     { label: "Reports", to: "/reports", icon: FileText, end: false },
   ];
