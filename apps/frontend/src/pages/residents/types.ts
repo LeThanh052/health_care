@@ -107,8 +107,27 @@ export type ResidentListQuery = {
 export type ResidentListResult = {
     items: Resident[];
     total: number;
+    counts?: {
+        total: number;
+        active: number;
+        discharged: number;
+        pending: number;
+    };
 };
 
 export type StatusUpdatePayload = {
     status: ResidentStatus;
+};
+
+export type ClinicianOption = {
+    id: string;
+    name: string;
+    fullName?: string;
+    role: string;
+    email?: string;
+};
+
+export type CliniciansResponse = {
+    physicians: ClinicianOption[];
+    nurses: ClinicianOption[];
 };

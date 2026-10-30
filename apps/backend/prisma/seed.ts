@@ -302,6 +302,22 @@ async function main() {
     },
   });
 
+  await prisma.user.upsert({
+    where: { email: "s.johnson@facility.org" },
+    update: { passwordHash: hashedPassword, status: "ACTIVE" },
+    create: {
+      employeeCode: "EMP_NURSE2",
+      email: "s.johnson@facility.org",
+      passwordHash: hashedPassword,
+      firstName: "Sarah",
+      lastName: "Johnson",
+      phoneNumber: "+15550003344",
+      status: "ACTIVE",
+      mfaEnabled: false,
+      roleId: dbRoles["Nurse (RN/LPN)"].id,
+    },
+  });
+
   // 4. CNA (Certified Nursing Assistant)
   await prisma.user.upsert({
     where: { email: "cna@facility.org" },
@@ -347,6 +363,22 @@ async function main() {
       firstName: "Dr. Robert",
       lastName: "Chen",
       phoneNumber: "+15550006666",
+      status: "ACTIVE",
+      mfaEnabled: false,
+      roleId: dbRoles["Physician"].id,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "m.brown@facility.org" },
+    update: { passwordHash: hashedPassword, status: "ACTIVE" },
+    create: {
+      employeeCode: "EMP_DOC2",
+      email: "m.brown@facility.org",
+      passwordHash: hashedPassword,
+      firstName: "Dr. Michael",
+      lastName: "Brown",
+      phoneNumber: "+15550006677",
       status: "ACTIVE",
       mfaEnabled: false,
       roleId: dbRoles["Physician"].id,
@@ -1617,6 +1649,108 @@ async function main() {
             ip_address: "10.0.1.42",
             accessed_at: new Date(Date.now() - 3 * 3600 * 1000),
           },
+        });
+      }
+    }
+  }
+
+  // ── Step 12: Audit Logs, Invoice Payments & Care Plan Reviews ──────────────
+  console.log("[Seed] Seeding Audit Logs, Invoice Payments & Care Plan Reviews...");
+  const adminUser = staffByEmail.get("admin@facility.org") || allStaffUsers[0];
+
+  const existingAudit = await prisma.audit_logs.findFirst({
+    where: { table_name: "facility_settings" }
+  });
+  if (!existingAudit && adminUser) {
+    await prisma.audit_logs.create({
+      data: {
+        table_name: "facility_settings",
+        record_id: facility.id,
+        action: "UPDATE",
+        performed_by: adminUser.id,
+        performed_at: new Date(Date.now() - 7 * 24 * 3600 * 1000),
+        ip_address: "10.0.1.10",
+        new_data: JSON.stringify({
+          capabilities: [
+            { code: "bariatric", supported: false, note: "Bariatric care not supported at this facility" },
+            { code: "ventilator", supported: false, note: "Ventilator support not equipped" },
+            { code: "memory-care", supported: true },
+            { code: "skilled-nursing", supported: true },
+            { code: "wound-care", supported: true },
+            { code: "physical-therapy", supported: true },
+          ]
+        })
+      }
+    });
+  }
+
+  const allInvoices = await prisma.invoices.findMany();
+  for (const inv of allInvoices) {
+    const existingP = await prisma.payments.findFirst({ where: { invoice_id: inv.id } });
+    if (!existingP && adminUser) {
+      const isPaid = inv.status === "PAID";
+      const total = Number(inv.total_amount);
+      const payAmount = isPaid ? total : Math.round(total * 0.6);
+
+      await prisma.payments.create({
+        data: {
+          invoices: { connect: { id: inv.id } },
+          users: { connect: { id: adminUser.id } },
+          payer_type: "PRIVATE_PAY",
+          amount: payAmount,
+          payment_method: "CREDIT_CARD",
+          paid_at: new Date(Date.now() - 5 * 24 * 3600 * 1000),
+        }
+      });
+    }
+  }
+
+  const allApprovedCarePlans = await prisma.care_plans.findMany({
+    where: { status: { in: ["APPROVED", "SIGNED", "ACTIVE"] } },
+    take: 5
+  });
+  for (const cp of allApprovedCarePlans) {
+    if (donUser) {
+      const existingRev = await prisma.care_plan_reviews.findFirst({ where: { care_plan_id: cp.id } });
+      if (!existingRev) {
+        await prisma.care_plan_reviews.create({
+          data: {
+            care_plans: { connect: { id: cp.id } },
+            users: { connect: { id: donUser.id } },
+            status: "APPROVED",
+            notes: "Interdisciplinary goals, clinical interventions, and LOC match resident profile. Approved.",
+            reviewed_at: new Date(Date.now() - 2 * 24 * 3600 * 1000),
+          }
+        });
+      }
+    }
+    if (docChen) {
+      const existAckDoc = await prisma.idt_acknowledgments.findFirst({
+        where: { care_plan_id: cp.id, user_id: docChen.id }
+      });
+      if (!existAckDoc) {
+        await prisma.idt_acknowledgments.create({
+          data: {
+            care_plans: { connect: { id: cp.id } },
+            users: { connect: { id: docChen.id } },
+            notes: "Physician reviewed medical orders and clinical goals. Acknowledged.",
+            acknowledged_at: new Date(Date.now() - 24 * 3600 * 1000),
+          }
+        });
+      }
+    }
+    if (dietDavid) {
+      const existAckDiet = await prisma.idt_acknowledgments.findFirst({
+        where: { care_plan_id: cp.id, user_id: dietDavid.id }
+      });
+      if (!existAckDiet) {
+        await prisma.idt_acknowledgments.create({
+          data: {
+            care_plans: { connect: { id: cp.id } },
+            users: { connect: { id: dietDavid.id } },
+            notes: "Dietary specialist reviewed nutritional profile and texture modification needs. Acknowledged.",
+            acknowledged_at: new Date(Date.now() - 20 * 3600 * 1000),
+          }
         });
       }
     }

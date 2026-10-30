@@ -21,6 +21,12 @@ export function ResidentListPage() {
     const [page, setPage] = useState(1);
     const [residents, setResidents] = useState<Resident[]>([]);
     const [total, setTotal] = useState(0);
+    const [counts, setCounts] = useState<{ total: number; active: number; discharged: number; pending: number }>({
+        total: 0,
+        active: 0,
+        discharged: 0,
+        pending: 0,
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const query = useMemo<ResidentListQuery>(
@@ -48,6 +54,9 @@ export function ResidentListPage() {
 
                 setResidents(result.items);
                 setTotal(result.total);
+                if (result.counts) {
+                    setCounts(result.counts);
+                }
             })
             .finally(() => {
                 if (isActive) {
@@ -75,9 +84,10 @@ export function ResidentListPage() {
         setPage(1);
     };
 
-    const activeCount = residents.filter((r) => r.status === "admitted" || r.status === "under_evaluation").length || 18;
-    const dischargedCount = residents.filter((r) => r.status === "discharged").length || 4;
-    const pendingCount = residents.filter((r) => r.status === "pending").length || 2;
+    const totalCount = counts.total || total;
+    const activeCount = counts.active ?? residents.filter((r) => r.status === "admitted" || r.status === "under_evaluation").length;
+    const dischargedCount = counts.discharged ?? residents.filter((r) => r.status === "discharged").length;
+    const pendingCount = counts.pending ?? residents.filter((r) => r.status === "pending").length;
 
     return (
         <main className="p-6 md:p-8 space-y-6 bg-slate-50 min-h-full">
@@ -119,7 +129,7 @@ export function ResidentListPage() {
                     </div>
                     <div>
                         <p className="text-xs font-medium text-slate-500">Total Residents</p>
-                        <p className="text-2xl font-bold text-slate-900">{total || 24}</p>
+                        <p className="text-2xl font-bold text-slate-900">{totalCount}</p>
                     </div>
                 </div>
 

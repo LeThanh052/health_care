@@ -5,7 +5,7 @@ import { APP_ROUTES } from "../../constants/appRoutes";
 import { CARE_LEVEL_LABEL, GENDER_LABEL, MOBILITY_STATUS_LABEL } from "./constants";
 import { ReceptionField, TextArea, TextInput } from "./components/receptionField";
 import { residentRepository } from "./services/residentRepository";
-import type { CareLevel, Gender, MobilityStatus, Resident, ResidentFormPayload } from "./types";
+import type { CareLevel, ClinicianOption, Gender, MobilityStatus, Resident, ResidentFormPayload } from "./types";
 
 type ResidentFormState = {
     fullName: string;
@@ -126,8 +126,36 @@ export function ResidentFormPage() {
     const [isLoading, setIsLoading] = useState(Boolean(id));
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [physicians, setPhysicians] = useState<ClinicianOption[]>([]);
+    const [nurses, setNurses] = useState<ClinicianOption[]>([]);
+    const [isLoadingClinicians, setIsLoadingClinicians] = useState(false);
 
     const isEditMode = Boolean(id);
+
+    useEffect(() => {
+        let isCurrent = true;
+        setIsLoadingClinicians(true);
+        residentRepository
+            .getClinicians()
+            .then((data) => {
+                if (isCurrent) {
+                    setPhysicians(data.physicians || []);
+                    setNurses(data.nurses || []);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load clinicians:", err);
+            })
+            .finally(() => {
+                if (isCurrent) {
+                    setIsLoadingClinicians(false);
+                }
+            });
+
+        return () => {
+            isCurrent = false;
+        };
+    }, []);
 
     useEffect(() => {
         if (!id) {
@@ -315,8 +343,42 @@ export function ResidentFormPage() {
                                 ))}
                             </select>
                         </ReceptionField>
-                        <TextInput label="Assigned nurse" value={form.assignedNurse} onChange={(event) => updateField("assignedNurse", event.target.value)} />
-                        <TextInput label="Assigned physician" value={form.assignedDoctor} onChange={(event) => updateField("assignedDoctor", event.target.value)} />
+                        <ReceptionField label="Assigned nurse" error={errors.assignedNurse}>
+                            <select
+                                value={form.assignedNurse}
+                                onChange={(event) => updateField("assignedNurse", event.target.value)}
+                            >
+                                <option value="">
+                                    {isLoadingClinicians ? "Loading nurses from database..." : "Select assigned nurse"}
+                                </option>
+                                {form.assignedNurse && !nurses.some((n) => n.name === form.assignedNurse) && (
+                                    <option value={form.assignedNurse}>{form.assignedNurse}</option>
+                                )}
+                                {nurses.map((nurse) => (
+                                    <option key={nurse.id} value={nurse.name}>
+                                        {nurse.name} {nurse.role ? `(${nurse.role})` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </ReceptionField>
+                        <ReceptionField label="Assigned physician" error={errors.assignedDoctor}>
+                            <select
+                                value={form.assignedDoctor}
+                                onChange={(event) => updateField("assignedDoctor", event.target.value)}
+                            >
+                                <option value="">
+                                    {isLoadingClinicians ? "Loading physicians from database..." : "Select assigned physician"}
+                                </option>
+                                {form.assignedDoctor && !physicians.some((p) => p.name === form.assignedDoctor) && (
+                                    <option value={form.assignedDoctor}>{form.assignedDoctor}</option>
+                                )}
+                                {physicians.map((physician) => (
+                                    <option key={physician.id} value={physician.name}>
+                                        {physician.name} {physician.role ? `(${physician.role})` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </ReceptionField>
                     </div>
                 </section>
 

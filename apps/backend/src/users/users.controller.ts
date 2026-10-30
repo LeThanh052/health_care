@@ -16,10 +16,28 @@ export class UsersController {
         return this.usersService.create(createUserDto);
     }
 
+    @Get("clinicians")
+    @ApiOperation({ summary: "Get clinical staff (physicians and nurses) from database" })
+    getClinicians() {
+        return this.usersService.findClinicians();
+    }
+
     @Get()
     @ApiOperation({ summary: "Get a list of users" })
-    findAll(@Query("page") page?: string, @Query("limit") limit?: string, @Query("search") search?: string) {
-        return this.usersService.findAll(page ? parseInt(page, 10) : 1, limit ? parseInt(limit, 10) : 10, search);
+    findAll(
+        @Query("page") page?: string,
+        @Query("limit") limit?: string,
+        @Query("search") search?: string,
+        @Query("role") role?: string,
+        @Query("status") status?: string,
+    ) {
+        return this.usersService.findAll(
+            page ? parseInt(page, 10) : 1,
+            limit ? parseInt(limit, 10) : 10,
+            search,
+            role,
+            status,
+        );
     }
 
     @Get(":id")

@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { APP_ROUTES } from "../../constants/appRoutes";
 import { z } from "zod";
 import { CARE_LEVEL_LABEL, COGNITIVE_STATUS_LABEL, FALL_RISK_LABEL, GENDER_LABEL, MOBILITY_STATUS_LABEL } from "./constants";
 import { ReceptionField, TextArea, TextInput } from "./components/receptionField";
 import { residentRepository } from "./services/residentRepository";
-import type { CareLevel, CognitiveStatus, FallRisk, Gender, MobilityStatus, ResidentEvaluationPayload } from "./types";
+import type { CareLevel, ClinicianOption, CognitiveStatus, FallRisk, Gender, MobilityStatus, ResidentEvaluationPayload } from "./types";
 
 type FlatReceptionForm = {
     fullName: string;
@@ -136,6 +136,34 @@ export function ResidentReceptionPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [physicians, setPhysicians] = useState<ClinicianOption[]>([]);
+    const [nurses, setNurses] = useState<ClinicianOption[]>([]);
+    const [isLoadingClinicians, setIsLoadingClinicians] = useState(false);
+
+    useEffect(() => {
+        let isCurrent = true;
+        setIsLoadingClinicians(true);
+        residentRepository
+            .getClinicians()
+            .then((data) => {
+                if (isCurrent) {
+                    setPhysicians(data.physicians || []);
+                    setNurses(data.nurses || []);
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to load clinicians:", err);
+            })
+            .finally(() => {
+                if (isCurrent) {
+                    setIsLoadingClinicians(false);
+                }
+            });
+
+        return () => {
+            isCurrent = false;
+        };
+    }, []);
 
     const completionScore = useMemo(() => {
         const requiredFields: Array<keyof FlatReceptionForm> = ["fullName", "dateOfBirth", "gender", "admissionDate", "careLevel", "emergencyContactName", "emergencyContactPhone"];
@@ -288,18 +316,42 @@ export function ResidentReceptionPage() {
                                 ))}
                             </select>
                         </ReceptionField>
-                        <TextInput
-                            label="Assigned nurse"
-                            placeholder="Sarah Johnson, RN"
-                            value={form.assignedNurse}
-                            onChange={(event) => updateField("assignedNurse", event.target.value)}
-                        />
-                        <TextInput
-                            label="Assigned physician"
-                            placeholder="Dr. Michael Brown"
-                            value={form.assignedDoctor}
-                            onChange={(event) => updateField("assignedDoctor", event.target.value)}
-                        />
+                        <ReceptionField label="Assigned nurse" error={errors.assignedNurse}>
+                            <select
+                                value={form.assignedNurse}
+                                onChange={(event) => updateField("assignedNurse", event.target.value)}
+                            >
+                                <option value="">
+                                    {isLoadingClinicians ? "Loading nurses from database..." : "Select assigned nurse"}
+                                </option>
+                                {form.assignedNurse && !nurses.some((n) => n.name === form.assignedNurse) && (
+                                    <option value={form.assignedNurse}>{form.assignedNurse}</option>
+                                )}
+                                {nurses.map((nurse) => (
+                                    <option key={nurse.id} value={nurse.name}>
+                                        {nurse.name} {nurse.role ? `(${nurse.role})` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </ReceptionField>
+                        <ReceptionField label="Assigned physician" error={errors.assignedDoctor}>
+                            <select
+                                value={form.assignedDoctor}
+                                onChange={(event) => updateField("assignedDoctor", event.target.value)}
+                            >
+                                <option value="">
+                                    {isLoadingClinicians ? "Loading physicians from database..." : "Select assigned physician"}
+                                </option>
+                                {form.assignedDoctor && !physicians.some((p) => p.name === form.assignedDoctor) && (
+                                    <option value={form.assignedDoctor}>{form.assignedDoctor}</option>
+                                )}
+                                {physicians.map((physician) => (
+                                    <option key={physician.id} value={physician.name}>
+                                        {physician.name} {physician.role ? `(${physician.role})` : ""}
+                                    </option>
+                                ))}
+                            </select>
+                        </ReceptionField>
                     </div>
                 </section>
 

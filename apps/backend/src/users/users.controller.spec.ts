@@ -18,4 +18,21 @@ describe("UsersController", () => {
     it("should be defined", () => {
         expect(controller).toBeDefined();
     });
+
+    it("should call usersService.findClinicians when getClinicians is called", async () => {
+        const mockResult = { physicians: [], nurses: [] };
+        const usersService = {
+            findClinicians: jest.fn().mockResolvedValue(mockResult),
+        };
+
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [UsersController],
+            providers: [{ provide: UsersService, useValue: usersService }],
+        }).compile();
+
+        const ctrl = module.get<UsersController>(UsersController);
+        const result = await ctrl.getClinicians();
+        expect(usersService.findClinicians).toHaveBeenCalled();
+        expect(result).toBe(mockResult);
+    });
 });

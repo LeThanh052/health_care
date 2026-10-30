@@ -1,5 +1,5 @@
 import { apiClient } from "../../../services/apiClient";
-import type { Resident, ResidentEvaluationPayload, ResidentFormPayload, ResidentListQuery, ResidentListResult, StatusUpdatePayload } from "../types";
+import type { CliniciansResponse, Resident, ResidentEvaluationPayload, ResidentFormPayload, ResidentListQuery, ResidentListResult, StatusUpdatePayload } from "../types";
 
 export type ResidentRepository = {
     listResidents: (query: ResidentListQuery) => Promise<ResidentListResult>;
@@ -8,6 +8,7 @@ export type ResidentRepository = {
     updateResident: (id: string, payload: ResidentFormPayload) => Promise<Resident>;
     updateStatus: (id: string, payload: StatusUpdatePayload) => Promise<Resident>;
     createPreScreening: (payload: ResidentEvaluationPayload) => Promise<Resident>;
+    getClinicians: () => Promise<CliniciansResponse>;
 };
 
 export const residentRepository: ResidentRepository = {
@@ -24,6 +25,7 @@ export const residentRepository: ResidentRepository = {
         return {
             items: data.data ?? data.items ?? [],
             total: data.meta?.total ?? data.total ?? 0,
+            counts: data.meta?.counts,
         };
     },
 
@@ -50,6 +52,25 @@ export const residentRepository: ResidentRepository = {
     async createPreScreening(payload) {
         const { data } = await apiClient.post("/admissions/pre-screening", payload);
         return data as Resident;
+    },
+
+    async getClinicians() {
+        try {
+            const { data } = await apiClient.get<CliniciansResponse>("/residents/clinicians");
+            if (data && (data.physicians || data.nurses)) {
+                return data;
+            }
+        } catch {
+            try {
+                const { data } = await apiClient.get<CliniciansResponse>("/users/clinicians");
+                if (data && (data.physicians || data.nurses)) {
+                    return data;
+                }
+            } catch {
+                // Ignore
+            }
+        }
+        return { physicians: [], nurses: [] };
     },
 };
 

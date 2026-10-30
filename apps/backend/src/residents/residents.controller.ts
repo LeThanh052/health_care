@@ -17,6 +17,12 @@ export class ResidentsController {
         return this.residentsService.findAll(query);
     }
 
+    @Get("clinicians")
+    @ApiOperation({ summary: "Get clinical staff (physicians and nurses) for resident assignments" })
+    getClinicians() {
+        return this.residentsService.findClinicians();
+    }
+
     @Get(":id")
     @ApiOperation({ summary: "Get resident detail" })
     findOne(@Param("id") id: string) {

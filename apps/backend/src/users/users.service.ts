@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { CreateUserDto } from "./dto/create-user.dto.js";
 import { UpdateUserDto } from "./dto/update-user.dto.js";
@@ -13,20 +14,86 @@ export class UsersService {
         return JSON.parse(JSON.stringify(obj, (_key, value) => (typeof value === "bigint" ? value.toString() : value)));
     }
 
-    async findAll(page = 1, limit = 10, search?: string) {
+    async findClinicians() {
+        const users = await this.prisma.user.findMany({
+            where: {
+                isDeleted: false,
+                status: "ACTIVE",
+            },
+            include: { role: true },
+            orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        });
+
+        const physicians = users
+            .filter((u) => {
+                const roleName = (u.role?.roleName || "").toLowerCase();
+                return roleName.includes("physician") || roleName.includes("doctor");
+            })
+            .map((u) => {
+                const fullName = [u.firstName, u.middleName, u.lastName].filter(Boolean).join(" ");
+                const name = fullName.startsWith("Dr.") ? fullName : `Dr. ${fullName}`;
+                return {
+                    id: u.id,
+                    name,
+                    fullName,
+                    role: u.role?.roleName || "Physician",
+                    email: u.email,
+                };
+            });
+
+        const nurses = users
+            .filter((u) => {
+                const roleName = (u.role?.roleName || "").toLowerCase();
+                return (
+                    roleName.includes("nurse") ||
+                    roleName.includes("nursing") ||
+                    roleName.includes("rn") ||
+                    roleName.includes("lpn") ||
+                    roleName.includes("don")
+                );
+            })
+            .map((u) => {
+                const fullName = [u.firstName, u.middleName, u.lastName].filter(Boolean).join(" ");
+                const isDON = (u.role?.roleName || "").includes("DON");
+                const suffix = isDON ? ", DON" : ", RN";
+                const name = fullName.includes(",") ? fullName : `${fullName}${suffix}`;
+                return {
+                    id: u.id,
+                    name,
+                    fullName,
+                    role: u.role?.roleName || "Nurse",
+                    email: u.email,
+                };
+            });
+
+        return { physicians, nurses };
+    }
+
+    async findAll(page = 1, limit = 10, search?: string, role?: string, status?: string) {
         const skip = (page - 1) * limit;
 
-        const where = search
-            ? {
-                  OR: [
-                      { email: { contains: search } },
-                      { phoneNumber: { contains: search } },
-                      { employeeCode: { contains: search } },
-                      { firstName: { contains: search } },
-                      { lastName: { contains: search } },
-                  ],
-              }
-            : {};
+        const where: Prisma.UserWhereInput = {
+            isDeleted: false,
+            ...(status ? { status } : {}),
+            ...(role
+                ? {
+                      role: {
+                          roleName: { contains: role },
+                      },
+                  }
+                : {}),
+            ...(search
+                ? {
+                      OR: [
+                          { email: { contains: search } },
+                          { phoneNumber: { contains: search } },
+                          { employeeCode: { contains: search } },
+                          { firstName: { contains: search } },
+                          { lastName: { contains: search } },
+                      ],
+                  }
+                : {}),
+        };
 
         const [users, total] = await Promise.all([
             this.prisma.user.findMany({

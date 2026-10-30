@@ -199,7 +199,7 @@ export class ResidentsService {
                 : {}),
         };
 
-        const [residents, total] = await Promise.all([
+        const [residents, total, activeCount, dischargedCount, pendingCount] = await Promise.all([
             this.prisma.residents.findMany({
                 where,
                 skip,
@@ -208,6 +208,9 @@ export class ResidentsService {
                 include: RESIDENT_INCLUDE,
             }),
             this.prisma.residents.count({ where }),
+            this.prisma.residents.count({ where: { is_deleted: false, status: "ACTIVE" } }),
+            this.prisma.residents.count({ where: { is_deleted: false, status: "DISCHARGED" } }),
+            this.prisma.residents.count({ where: { is_deleted: false, status: "PENDING" } }),
         ]);
 
         return {
@@ -217,8 +220,69 @@ export class ResidentsService {
                 page,
                 limit,
                 totalPages: Math.ceil(total / limit),
+                counts: {
+                    total: activeCount + dischargedCount + pendingCount,
+                    active: activeCount,
+                    discharged: dischargedCount,
+                    pending: pendingCount,
+                },
             },
         };
+    }
+
+    async findClinicians() {
+        const users = await this.prisma.user.findMany({
+            where: {
+                isDeleted: false,
+                status: "ACTIVE",
+            },
+            include: { role: true },
+            orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        });
+
+        const physicians = users
+            .filter((u) => {
+                const roleName = (u.role?.roleName || "").toLowerCase();
+                return roleName.includes("physician") || roleName.includes("doctor");
+            })
+            .map((u) => {
+                const fullName = [u.firstName, u.middleName, u.lastName].filter(Boolean).join(" ");
+                const name = fullName.startsWith("Dr.") ? fullName : `Dr. ${fullName}`;
+                return {
+                    id: u.id,
+                    name,
+                    fullName,
+                    role: u.role?.roleName || "Physician",
+                    email: u.email,
+                };
+            });
+
+        const nurses = users
+            .filter((u) => {
+                const roleName = (u.role?.roleName || "").toLowerCase();
+                return (
+                    roleName.includes("nurse") ||
+                    roleName.includes("nursing") ||
+                    roleName.includes("rn") ||
+                    roleName.includes("lpn") ||
+                    roleName.includes("don")
+                );
+            })
+            .map((u) => {
+                const fullName = [u.firstName, u.middleName, u.lastName].filter(Boolean).join(" ");
+                const isDON = (u.role?.roleName || "").includes("DON");
+                const suffix = isDON ? ", DON" : ", RN";
+                const name = fullName.includes(",") ? fullName : `${fullName}${suffix}`;
+                return {
+                    id: u.id,
+                    name,
+                    fullName,
+                    role: u.role?.roleName || "Nurse",
+                    email: u.email,
+                };
+            });
+
+        return { physicians, nurses };
     }
 
     async findOne(id: string) {

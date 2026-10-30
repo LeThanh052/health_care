@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { admissionsService } from "../../services/admissions";
 import { facilityService } from "../../services/facility";
 import { residentsService } from "../../services/residents";
+import { residentRepository } from "../residents/services/residentRepository";
 import { fieldClassName, labelClassName, LoadingState, Notice, Panel, PrimaryButton, SecondaryButton, WorkflowPage } from "../../components/workflow/WorkflowUi";
 
 const requiredConsents = ["Admission Agreement", "HIPAA Notice of Privacy Practices", "Financial Responsibility Agreement", "Advance Directive Acknowledgment"];
@@ -14,6 +15,7 @@ export default function AdmissionFormPage() {
     const residentIdFromQuery = searchParams.get("residentId") ?? "";
     const residentsQuery = useQuery({ queryKey: ["resident-options"], queryFn: () => residentsService.getAll() });
     const facilityQuery = useQuery({ queryKey: ["facility-settings"], queryFn: facilityService.getCurrentSettings });
+    const cliniciansQuery = useQuery({ queryKey: ["clinicians-options"], queryFn: () => residentRepository.getClinicians() });
     const [form, setForm] = useState({
         residentId: residentIdFromQuery,
         bedId: "",
@@ -154,11 +156,43 @@ export default function AdmissionFormPage() {
                         <div className="grid gap-5 md:grid-cols-2">
                             <label className={labelClassName}>
                                 Physician in Charge
-                                <input className={fieldClassName} value={form.primaryPhysician} onChange={(event) => setForm({ ...form, primaryPhysician: event.target.value })} />
+                                <select
+                                    className={fieldClassName}
+                                    value={form.primaryPhysician}
+                                    onChange={(event) => setForm({ ...form, primaryPhysician: event.target.value })}
+                                >
+                                    <option value="">
+                                        {cliniciansQuery.isLoading ? "Loading physicians..." : "Select physician..."}
+                                    </option>
+                                    {form.primaryPhysician && !cliniciansQuery.data?.physicians?.some((p) => p.name === form.primaryPhysician) && (
+                                        <option value={form.primaryPhysician}>{form.primaryPhysician}</option>
+                                    )}
+                                    {cliniciansQuery.data?.physicians?.map((p) => (
+                                        <option key={p.id} value={p.name}>
+                                            {p.name} {p.role ? `(${p.role})` : ""}
+                                        </option>
+                                    ))}
+                                </select>
                             </label>
                             <label className={labelClassName}>
                                 Nurse in Charge
-                                <input className={fieldClassName} value={form.nurseInCharge} onChange={(event) => setForm({ ...form, nurseInCharge: event.target.value })} />
+                                <select
+                                    className={fieldClassName}
+                                    value={form.nurseInCharge}
+                                    onChange={(event) => setForm({ ...form, nurseInCharge: event.target.value })}
+                                >
+                                    <option value="">
+                                        {cliniciansQuery.isLoading ? "Loading nurses..." : "Select nurse..."}
+                                    </option>
+                                    {form.nurseInCharge && !cliniciansQuery.data?.nurses?.some((n) => n.name === form.nurseInCharge) && (
+                                        <option value={form.nurseInCharge}>{form.nurseInCharge}</option>
+                                    )}
+                                    {cliniciansQuery.data?.nurses?.map((n) => (
+                                        <option key={n.id} value={n.name}>
+                                            {n.name} {n.role ? `(${n.role})` : ""}
+                                        </option>
+                                    ))}
+                                </select>
                             </label>
                         </div>
                     </Panel>
