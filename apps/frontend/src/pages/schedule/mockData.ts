@@ -1,75 +1,120 @@
 import type { DoctorSchedule } from "./types";
-import dayjs from "dayjs";
 
-export const getMockSchedules = (year: number, month: number): Record<number, DoctorSchedule[]> => {
+export const getMockSchedules = (_year: number, _month: number): Record<number, DoctorSchedule[]> => {
   return {
     1: [
-      { id: "01", doctorId: "d6", doctorName: "Dr. Robert Chen", time: "09:00 AM", description: "Geriatric Care & Clinical Rounds", colorVariant: "blue" },
-      { id: "02", doctorId: "d5", doctorName: "Dr. Emily Smith", time: "10:00 AM", colorVariant: "teal" },
-    ],
-    3: [
-      { id: "1", doctorId: "d1", doctorName: "Dr. John Davis", time: "11:00 AM", colorVariant: "teal" },
-      { id: "2", doctorId: "d2", doctorName: "Dr. Linda Green", time: "01:00 PM", colorVariant: "blue" },
+      {
+        id: "01",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "09:00 AM",
+        description: "Morning Clinical Rounds — Rooms 101 to 106",
+        colorVariant: "blue",
+      },
+      {
+        id: "02",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "02:00 PM",
+        description: "Care Plan Review & IDT Consultation",
+        colorVariant: "teal",
+      },
     ],
     4: [
-      { id: "3", doctorId: "d3", doctorName: "Dr. Michael Brown", time: "02:00 PM", colorVariant: "blue" },
-      { id: "4", doctorId: "d4", doctorName: "Dr. Petra Winsburry", time: "03:00 PM", colorVariant: "teal" },
-    ],
-    5: [
-      { id: "5", doctorId: "d5", doctorName: "Dr. Emily Smith", time: "04:00 PM", description: "Chronic Disease Management for Hypertension with Patricia Clark", colorVariant: "teal" },
-    ],
-    6: [
-      { id: "6", doctorId: "d4", doctorName: "Dr. Petra Winsburry", time: "10:00 AM", description: "Acute Illness Treatment for Flu Symptoms with Robert Brown", colorVariant: "blue" },
+      {
+        id: "03",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "10:00 AM",
+        description: "Geriatric Assessment with Harold Finch (Room 106)",
+        colorVariant: "blue",
+      },
     ],
     7: [
-      { id: "71", doctorId: "d1", doctorName: "Dr. John Davis", time: "09:00 AM", colorVariant: "teal" },
-      { id: "72", doctorId: "d2", doctorName: "Dr. Linda Green", time: "10:00 AM", colorVariant: "blue" },
-    ],
-    9: [
-      { id: "91", doctorId: "d3", doctorName: "Dr. Michael Brown", time: "11:00 AM", colorVariant: "blue" },
-      { id: "92", doctorId: "d4", doctorName: "Dr. Petra Winsburry", time: "01:00 PM", colorVariant: "teal" },
+      {
+        id: "04",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "09:30 AM",
+        description: "Hypertension & Cardiac Follow-up with Margaret Thatcher (Room 215)",
+        colorVariant: "teal",
+      },
+      {
+        id: "05",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "03:00 PM",
+        description: "eMAR Medication Adjustment Consultation",
+        colorVariant: "blue",
+      },
     ],
     11: [
-      { id: "101", doctorId: "d5", doctorName: "Dr. Emily Smith", time: "02:00 PM", description: "Chronic Disease Management for Asthma with Rachel Green", colorVariant: "teal" },
-    ],
-    12: [
-      { id: "111", doctorId: "d1", doctorName: "Dr. John Davis", time: "03:00 PM", description: "Acute Illness Treatment for Skin Rash with Daniel Lewis", colorVariant: "teal" },
+      {
+        id: "06",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "11:00 AM",
+        description: "Routine Physical Examination with Nguyen Van An (Room A-104)",
+        colorVariant: "blue",
+      },
     ],
     14: [
-      { id: "131", doctorId: "d2", doctorName: "Dr. Linda Green", time: "04:00 PM", description: "Preventive Care Consultation with Nancy Martinez", colorVariant: "teal" },
-    ],
-    15: [
-      { id: "151", doctorId: "d4", doctorName: "Dr. Petra Winsburry", time: "09:00 AM", description: "Routine Check-Up with John Smith", colorVariant: "blue" },
-    ],
-    17: [
-      { id: "171", doctorId: "d5", doctorName: "Dr. Emily Smith", time: "10:00 AM", description: "Chronic Disease Management for Diabetes Check-Up with Sarah Johnson", colorVariant: "teal" },
+      {
+        id: "07",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "09:00 AM",
+        description: "Cognitive Health Evaluation with Helen Keller (Room 101-B)",
+        colorVariant: "teal",
+      },
     ],
     18: [
-      { id: "181", doctorId: "d1", doctorName: "Dr. John Davis", time: "11:00 AM", description: "Acute Illness Treatment for Flu Symptoms with James Brown", colorVariant: "blue" },
+      {
+        id: "08",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "10:00 AM",
+        description: "Mid-month Clinical Rounds — Assisted Living Ward",
+        colorVariant: "blue",
+      },
+      {
+        id: "09",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "02:30 PM",
+        description: "Specialist Follow-up with Frank Sinatra (Room 222-A)",
+        colorVariant: "teal",
+      },
     ],
-    20: [
-      { id: "201", doctorId: "d2", doctorName: "Dr. Linda Green", time: "01:00 PM", description: "Preventive Care Consultation with Susan Clark", colorVariant: "teal" },
+    21: [
+      {
+        id: "10",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "09:00 AM",
+        description: "Pre-admission Health Screening Consultation",
+        colorVariant: "blue",
+      },
     ],
-    22: [
-      { id: "221", doctorId: "d3", doctorName: "Dr. Michael Brown", time: "02:00 PM", description: "Geriatric Care for Arthritis Management with Robert Wilson", colorVariant: "blue" },
-    ],
-    23: [
-      { id: "231", doctorId: "d4", doctorName: "Dr. Petra Winsburry", time: "03:00 PM", description: "Routine Check-Up with Emily Thompson", colorVariant: "blue" },
-    ],
-    26: [
-      { id: "251", doctorId: "d5", doctorName: "Dr. Emily Smith", time: "04:00 PM", description: "Chronic Disease Management for Hypertension with Jessica Green", colorVariant: "teal" },
-    ],
-    27: [
-      { id: "261", doctorId: "d1", doctorName: "Dr. John Davis", time: "09:00 AM", description: "Acute Illness Treatment for Respiratory Infection with Michael White", colorVariant: "blue" },
+    25: [
+      {
+        id: "11",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "11:00 AM",
+        description: "Quarterly LOC Tier Review & Clinical Audit",
+        colorVariant: "teal",
+      },
     ],
     28: [
-      { id: "271", doctorId: "d2", doctorName: "Dr. Linda Green", time: "10:00 AM", description: "Preventive Care Consultation with Jennifer Harris", colorVariant: "teal" },
-    ],
-    29: [
-      { id: "281", doctorId: "d3", doctorName: "Dr. Michael Brown", time: "11:00 AM", description: "Geriatric Care for Medication Review with Barbara Lewis", colorVariant: "blue" },
-    ],
-    31: [
-      { id: "301", doctorId: "d4", doctorName: "Dr. Petra Winsburry", time: "01:00 PM", description: "Routine Check-Up with David Thompson", colorVariant: "teal" },
+      {
+        id: "12",
+        doctorId: "3c620026-0dc5-40a3-b13f-d966cfcb9a18",
+        doctorName: "Dr. Robert Chen",
+        time: "10:00 AM",
+        description: "Interdisciplinary Team (IDT) Care Plan Sign-off",
+        colorVariant: "blue",
+      },
     ],
   };
 };

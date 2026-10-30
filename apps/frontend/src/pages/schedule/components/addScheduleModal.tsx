@@ -36,7 +36,7 @@ export const AddScheduleModal = ({ isOpen, onClose }: AddScheduleModalProps) => 
                 type="text"
                 value={doctorName}
                 onChange={(e) => setDoctorName(e.target.value)}
-                placeholder="e.g. Dr. John Davis"
+                placeholder="e.g. Dr. Robert Chen"
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 shadow-sm"
               />
             </div>
