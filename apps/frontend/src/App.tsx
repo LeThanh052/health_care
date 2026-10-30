@@ -263,7 +263,14 @@ function App() {
                     }
                 />
 
-                <Route path="/doctor-schedule" element={<DoctorsSchedulePage />} />
+                <Route
+                    path="/doctor-schedule"
+                    element={
+                        <ProtectedRoute allowedRoles={["Physician", "Doctor", "Admin"]} fallbackPath="/dashboard">
+                            <DoctorsSchedulePage />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route path="/emar" element={<EmarPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
             </Route>

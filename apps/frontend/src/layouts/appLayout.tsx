@@ -36,24 +36,65 @@ export function AppLayout() {
   const displayRole = user?.roleName || "Nurse";
   const initials = user ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}` : "AL";
 
+  const rawRole = user?.roleName ?? (user as any)?.role?.roleName ?? (user as any)?.role ?? "";
+  const roleLower = String(rawRole).trim().toLowerCase();
+
+  const isPhysician = roleLower.includes("physician") || roleLower.includes("doctor");
+  const isCna = roleLower.includes("cna") || roleLower.includes("assistant");
+  const isNurse = roleLower.includes("nurse") && !roleLower.includes("don") && !roleLower.includes("director");
+  const isDon = roleLower.includes("don") || roleLower.includes("director");
+  const isAdmission = roleLower.includes("admission");
+  const isAdmin = roleLower.includes("admin");
+
   const navigationItems: {
     label: string;
     to: string;
     icon: React.ComponentType<{ size?: number; className?: string }>;
     end: boolean;
     badge?: string;
+    show?: boolean;
   }[] = [
-    { label: "Dashboard", to: APP_ROUTES.DASHBOARD, icon: Home, end: true },
-    { label: "Residents", to: APP_ROUTES.RESIDENTS, icon: Users, end: false },
-    { label: "Care Planning", to: APP_ROUTES.CARE_PLANS, icon: ClipboardList, end: false },
-    { label: "Daily Tasks", to: "/care-tasks/today", icon: CheckSquare, end: false },
-    { label: "eMAR", to: APP_ROUTES.EMAR, icon: Stethoscope, end: true },
-    { label: "Doctor Schedule", to: "/doctor-schedule", icon: Calendar, end: false },
-    { label: "Incident & Risk", to: APP_ROUTES.INCIDENTS, icon: ShieldAlert, end: false },
-    { label: "Reports", to: "/reports", icon: FileText, end: false },
+    { label: "Dashboard", to: APP_ROUTES.DASHBOARD, icon: Home, end: true, show: true },
+    { label: "Residents", to: APP_ROUTES.RESIDENTS, icon: Users, end: false, show: true },
+    {
+      label: "Care Planning",
+      to: APP_ROUTES.CARE_PLANS,
+      icon: ClipboardList,
+      end: false,
+      show: isAdmin || isDon || isNurse || isPhysician || isAdmission,
+    },
+    {
+      label: "Daily Tasks",
+      to: "/care-tasks/today",
+      icon: CheckSquare,
+      end: false,
+      show: isCna || isNurse || isDon || isAdmin,
+    },
+    {
+      label: "eMAR",
+      to: APP_ROUTES.EMAR,
+      icon: Stethoscope,
+      end: true,
+      show: isNurse || isDon || isPhysician || isAdmin,
+    },
+    {
+      label: "Doctor Schedule",
+      to: "/doctor-schedule",
+      icon: Calendar,
+      end: false,
+      show: isPhysician || isAdmin,
+    },
+    { label: "Incident & Risk", to: APP_ROUTES.INCIDENTS, icon: ShieldAlert, end: false, show: true },
+    {
+      label: "Reports",
+      to: "/reports",
+      icon: FileText,
+      end: false,
+      show: isAdmin || isDon || isNurse || isAdmission || isPhysician,
+    },
   ];
 
-  const isAdmin = Boolean(user?.roleName?.toLowerCase().includes("admin"));
+  const visibleNavItems = navigationItems.filter((item) => item.show !== false);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
@@ -167,7 +208,7 @@ export function AppLayout() {
           } bg-white border-r border-slate-200 flex flex-col transition-all duration-200 shrink-0 overflow-hidden z-20`}
         >
           <div className="p-3 space-y-1 flex-1">
-            {navigationItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
 
               return (
